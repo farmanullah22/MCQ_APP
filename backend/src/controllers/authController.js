@@ -1,0 +1,199 @@
+const User = require('../models/User');
+const ApiError = require('../utils/ApiError');
+const asyncHandler = require('../utils/asyncHandler');
+const ApiResponse = require('../utils/ApiResponse');
+const { signToken, parseDeviceInfo } = require('../utils/jwt');
+const { recordAudit } = require('../middleware/auth');
+
+const login = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) throw new ApiError(400, 'Email and password are required.');
+
+  const user = await User.findOne({ email: email.toLowerCase() })
+    .select('+password')
+    .populate('assignedShop');
+  if (!user || !(await user.comparePassword(password))) {
+    throw new ApiError(401, 'Invalid email or password.');
+  }
+  if (!user.isActive) throw new ApiError(403, 'Your account has been deactivated.');
+
+  user.lastLoginAt = new Date();
+  if (req.body.fcmToken) user.fcmToken = req.body.fcmToken;
+  await user.save({ validateBeforeSave: false });
+
+  const device = parseDeviceInfo(req);
+  req.user = user;
+  await recordAudit(req, {
+    actionType: 'LOGIN',
+    module: 'auth',
+    recordId: user._id,
+    recordType: 'User',
+    remarks: `${user.role.toUpperCase()} ${user.name} logged in`,
+    shopId: user.assignedShop ? user.assignedShop._id : null,
+    shopName: user.assignedShop ? user.assignedShop.name : '',
+  });
+
+  const token = signToken(user._id, user.role, user.assignedShop?._id);
+
+  res.json(ApiResponse.ok('Login successful', { token, user: user.toPublicJSON() }));
+});
+
+const logout = asyncHandler(async (req, res) => {
+  if (req.user) {
+    if (req.body.fcmToken) {
+      await User.findByIdAndUpdate(req.user._id, { $set: { fcmToken: null } });
+    }
+    await recordAudit(req, {
+      actionType: 'LOGOUT',
+      module: 'auth',
+      recordId: req.user._id,
+      recordType: 'User',
+      remarks: `${req.user.name} logged out`,
+      shopId: req.user.assignedShop ? req.user.assignedShop._id : null,
+      shopName: req.user.assignedShop ? req.user.assignedShop.name : '',
+    });
+  }
+  res.json(ApiResponse.ok('Logout successful'));
+});
+
+const getProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate('assignedShop');
+  res.json(ApiResponse.ok('Profile fetched', user.toPublicJSON()));
+});
+
+const updateProfile = asyncHandler(async (req, res) => {
+  const { name, phone, email, notificationEnabled } = req.body;
+  const oldData = req.user.toPublicJSON();
+
+  const user = await User.findById(req.user._id);
+  if (name !== undefined) user.name = name;
+  if (phone !== undefined) user.phone = phone;
+  if (notificationEnabled !== undefined) user.notificationEnabled = notificationEnabled;
+  if (email !== undefined) {
+    const exists = await User.findOne({ email: email.toLowerCase(), _id: { $ne: user._id } });
+    if (exists) throw new ApiError(409, 'Email already in use.');
+    user.email = email;
+  }
+  await user.save();
+  await user.populate('assignedShop');
+
+  await recordAudit(req, {
+    actionType: 'UPDATE_USER',
+    module: 'users',
+    recordId: user._id,
+    recordType: 'User',
+    oldData,
+    newData: user.toPublicJSON(),
+    remarks: 'Profile updated',
+    shopId: user.assignedShop ? user.assignedShop._id : null,
+    shopName: user.assignedShop ? user.assignedShop.name : '',
+  });
+
+  res.json(ApiResponse.ok('Profile updated', user.toPublicJSON()));
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, 'Current and new password are required.');
+  }
+  if (newPassword.length < 6) throw new ApiError(400, 'New password must be at least 6 characters.');
+
+  const user = await User.findById(req.user._id).select('+password');
+  if (!(await user.comparePassword(currentPassword))) {
+    throw new ApiError(400, 'Current password is incorrect.');
+  }
+  user.password = newPassword;
+  await user.save();
+
+  await recordAudit(req, {
+    actionType: 'UPDATE_USER',
+    module: 'users',
+    recordId: user._id,
+    recordType: 'User',
+    remarks: 'Password changed',
+    shopId: user.assignedShop ? user.assignedShop._id : null,
+    shopName: user.assignedShop ? user.assignedShop.name : '',
+  });
+
+  res.json(ApiResponse.ok('Password changed successfully'));
+});
+
+const registerManager = asyncHandler(async (req, res) => {
+  const { name, email, password, phone, assignedShop } = req.body;
+  if (!name || !email || !password) throw new ApiError(400, 'Name, email and password are required.');
+
+  const exists = await User.findOne({ email: email.toLowerCase() });
+  if (exists) throw new ApiError(409, 'A user with this email already exists.');
+
+  const user = await User.create({
+    name,
+    email,
+    password,
+    phone: phone || '',
+    role: 'manager',
+    assignedShop: assignedShop || null,
+  });
+
+  await recordAudit(req, {
+    actionType: 'CREATE_USER',
+    module: 'users',
+    recordId: user._id,
+    recordType: 'Manager',
+    newData: user.toPublicJSON(),
+    remarks: `Manager ${user.name} created`,
+    shopId: assignedShop || null,
+  });
+
+  res.status(201).json(ApiResponse.created('Manager created', user.toPublicJSON()));
+});
+
+const listManagers = asyncHandler(async (req, res) => {
+  const managers = await User.find({ role: 'manager' })
+    .populate('assignedShop', 'name address')
+    .select('-password')
+    .sort({ createdAt: -1 });
+  res.json(ApiResponse.ok('Managers fetched', managers));
+});
+
+const updateManager = asyncHandler(async (req, res) => {
+  const manager = await User.findById(req.params.id);
+  if (!manager || manager.role !== 'manager') throw new ApiError(404, 'Manager not found.');
+  const oldData = manager.toPublicJSON();
+
+  const { name, phone, email, assignedShop, isActive } = req.body;
+  if (name !== undefined) manager.name = name;
+  if (phone !== undefined) manager.phone = phone;
+  if (assignedShop !== undefined) manager.assignedShop = assignedShop;
+  if (isActive !== undefined) manager.isActive = isActive;
+  if (email !== undefined) {
+    const exists = await User.findOne({ email: email.toLowerCase(), _id: { $ne: manager._id } });
+    if (exists) throw new ApiError(409, 'Email already in use.');
+    manager.email = email;
+  }
+  await manager.save();
+  await manager.populate('assignedShop', 'name address');
+
+  await recordAudit(req, {
+    actionType: 'UPDATE_USER',
+    module: 'users',
+    recordId: manager._id,
+    recordType: 'Manager',
+    oldData,
+    newData: manager.toPublicJSON(),
+    remarks: 'Manager updated',
+  });
+
+  res.json(ApiResponse.ok('Manager updated', manager.toPublicJSON()));
+});
+
+module.exports = {
+  login,
+  logout,
+  getProfile,
+  updateProfile,
+  changePassword,
+  registerManager,
+  listManagers,
+  updateManager,
+};

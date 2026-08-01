@@ -1,0 +1,109 @@
+class SaleItem {
+  final String productId;
+  final String productName;
+  final int quantity;
+  final double unitPrice;
+  final double totalAmount;
+
+  const SaleItem({
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    required this.unitPrice,
+    required this.totalAmount,
+  });
+
+  factory SaleItem.fromJson(Map<String, dynamic> json) {
+    final product = json['product'];
+    return SaleItem(
+      productId: product is Map<String, dynamic>
+          ? (product['id'] ?? product['_id']).toString()
+          : product?.toString() ?? '',
+      productName: json['productName']?.toString() ?? '',
+      quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
+      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
+    );
+  }
+}
+
+class Sale {
+  final String id;
+  final String invoiceNo;
+  final String shopId;
+  final String shopName;
+  final String customerName;
+  final String customerPhone;
+  final List<SaleItem> items;
+  final double subtotal;
+  final double discount;
+  final double totalAmount;
+  final double profit;
+  final String paymentMethod;
+  final String notes;
+  final String createdById;
+  final String createdByName;
+  final DateTime? createdAt;
+
+  const Sale({
+    required this.id,
+    required this.invoiceNo,
+    required this.shopId,
+    this.shopName = '',
+    this.customerName = 'Walk-in Customer',
+    this.customerPhone = '',
+    this.items = const [],
+    this.subtotal = 0,
+    this.discount = 0,
+    this.totalAmount = 0,
+    this.profit = 0,
+    this.paymentMethod = 'cash',
+    this.notes = '',
+    this.createdById = '',
+    this.createdByName = '',
+    this.createdAt,
+  });
+
+  int get totalItems => items.fold(0, (a, i) => a + i.quantity);
+
+  factory Sale.fromJson(Map<String, dynamic> json) {
+    final shop = json['shop'];
+    String sId = (json['shopId'] ?? json['shop'])?.toString() ?? '';
+    String sName = '';
+    if (shop is Map<String, dynamic>) {
+      sId = (shop['id'] ?? shop['_id']).toString();
+      sName = shop['name']?.toString() ?? '';
+    }
+    final createdBy = json['createdBy'];
+    String cbId = '';
+    String cbName = '';
+    if (createdBy is Map<String, dynamic>) {
+      cbId = (createdBy['id'] ?? createdBy['_id']).toString();
+      cbName = createdBy['name']?.toString() ?? '';
+    } else if (createdBy != null) {
+      cbId = createdBy.toString();
+    }
+
+    return Sale(
+      id: (json['id'] ?? json['_id']).toString(),
+      invoiceNo: json['invoiceNo']?.toString() ?? '',
+      shopId: sId,
+      shopName: sName,
+      customerName: json['customerName']?.toString() ?? 'Walk-in Customer',
+      customerPhone: json['customerPhone']?.toString() ?? '',
+      items: (json['items'] as List?)
+              ?.map((e) => SaleItem.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0,
+      discount: (json['discount'] as num?)?.toDouble() ?? 0,
+      totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
+      profit: (json['profit'] as num?)?.toDouble() ?? 0,
+      paymentMethod: json['paymentMethod']?.toString() ?? 'cash',
+      notes: json['notes']?.toString() ?? '',
+      createdById: cbId,
+      createdByName: cbName,
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+    );
+  }
+}
