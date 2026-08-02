@@ -172,7 +172,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                     child: TextFormField(
                       controller: _discountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Discount (Rs.)', prefixIcon: Icon(Icons.percent)),
+                      decoration: const InputDecoration(labelText: 'Discount (Rs.)'),
                     ),
                   ),
                   const SizedBox(width: 12),

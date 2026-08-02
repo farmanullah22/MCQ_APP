@@ -39,8 +39,12 @@ class AuditState {
 class AuditController extends Notifier<AuditState> {
   @override
   AuditState build() {
-    _loadLogs();
-    _loadStats();
+    // Defer initial loads until build() completes (see dashboard providers).
+    Future.microtask(() {
+      if (!ref.mounted) return;
+      _loadLogs();
+      _loadStats();
+    });
     return const AuditState();
   }
 

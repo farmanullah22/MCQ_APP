@@ -32,8 +32,13 @@ class DashboardState {
 class DashboardController extends Notifier<DashboardState> {
   @override
   DashboardState build() {
-    _loadShops();
-    _load();
+    // Defer initial loads until build() completes; touching `state` here
+    // would read this provider before it is initialized (Riverpod readSelf).
+    Future.microtask(() {
+      if (!ref.mounted) return;
+      _loadShops();
+      _load();
+    });
     return const DashboardState();
   }
 

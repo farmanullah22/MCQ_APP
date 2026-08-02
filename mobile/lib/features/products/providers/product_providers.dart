@@ -36,7 +36,10 @@ class ProductListState {
 class ProductListController extends Notifier<ProductListState> {
   @override
   ProductListState build() {
-    _load();
+    // Defer initial load until build() completes (see dashboard providers).
+    Future.microtask(() {
+      if (ref.mounted) _load();
+    });
     return const ProductListState();
   }
 

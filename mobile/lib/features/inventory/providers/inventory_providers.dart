@@ -15,7 +15,10 @@ class InventoryHistoryState {
 class InventoryHistoryController extends Notifier<InventoryHistoryState> {
   @override
   InventoryHistoryState build() {
-    _load();
+    // Defer initial load until build() completes (see dashboard providers).
+    Future.microtask(() {
+      if (ref.mounted) _load();
+    });
     return const InventoryHistoryState();
   }
 

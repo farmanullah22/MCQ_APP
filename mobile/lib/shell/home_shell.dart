@@ -27,6 +27,7 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
+  final List<Widget?> _screens = List<Widget?>.filled(5, null);
 
   static const _tabs = [
     DashboardScreen(),
@@ -41,8 +42,13 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final user = ref.watch(currentUserProvider);
     final isAdmin = user?.isAdmin ?? false;
 
+    _screens[_index] ??= _tabs[_index];
+
     return Scaffold(
-      body: IndexedStack(index: _index, children: _tabs),
+      body: IndexedStack(
+        index: _index,
+        children: List.generate(_tabs.length, (i) => _screens[i] ?? const SizedBox.shrink()),
+      ),
       drawer: _buildDrawer(context, isAdmin),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -123,6 +129,26 @@ class _HomeShellState extends ConsumerState<HomeShell> {
             color: theme.colorScheme.error,
             onTap: () async {
               final navigator = Navigator.of(context);
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  icon: const Icon(Icons.logout, color: Colors.redAccent, size: 32),
+                  title: const Text('Sign out?'),
+                  content: const Text('You will need to sign in again to access your account.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: theme.colorScheme.error, foregroundColor: Colors.white),
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: const Text('Sign Out'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed != true) return;
               navigator.pop();
               await ref.read(authControllerProvider.notifier).logout();
               if (navigator.mounted) {

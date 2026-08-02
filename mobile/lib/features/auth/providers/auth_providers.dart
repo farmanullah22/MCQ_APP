@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_client.dart';
@@ -38,23 +39,28 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<bool> login(String email, String password, {String? fcmToken}) async {
+    debugPrint('[AUTH] login() called for $email');
     state = const AuthState(status: AuthStatus.authenticating);
     try {
       final repo = ref.read(authRepositoryProvider);
       final result = await repo.login(email, password, fcmToken: fcmToken);
       await LocalStore.saveSession(result.token, result.user);
+      debugPrint('[AUTH] login() succeeded');
       state = AuthState(status: AuthStatus.authenticated, user: result.user);
       return true;
     } catch (e) {
+      debugPrint('[AUTH] login() failed: $e');
       state = AuthState(status: AuthStatus.unauthenticated, error: e.toString());
       return false;
     }
   }
 
   Future<void> logout() async {
+    debugPrint('[AUTH] logout() called');
     try {
       await ref.read(authRepositoryProvider).logout();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AUTH] logout repo error: $e');
       // best effort - clear local session regardless
     }
     await LocalStore.clearSession();
@@ -62,6 +68,7 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> _forceLogout() async {
+    debugPrint('[AUTH] _forceLogout() called (401 detected)');
     await LocalStore.clearSession();
     state = const AuthState(status: AuthStatus.unauthenticated);
   }

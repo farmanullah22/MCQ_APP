@@ -5,6 +5,7 @@ import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/status_views.dart';
+import '../../auth/presentation/login_screen.dart';
 import '../../auth/providers/auth_providers.dart';
 import 'settings_screen.dart';
 
@@ -57,6 +58,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.logout, color: AppColors.danger, size: 32),
+        title: const Text('Sign out?'),
+        content: const Text('You will need to sign in again to access your account.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(authControllerProvider.notifier).logout();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
   }
 
   @override
@@ -146,6 +176,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               leading: const Icon(Icons.lock_outline, color: AppColors.warning),
               title: const Text('Change Password', style: TextStyle(fontWeight: FontWeight.w600)),
               children: [_ChangePasswordForm()],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.logout, color: AppColors.danger, size: 22),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'End this session and return to the login screen.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    onPressed: _confirmLogout,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.danger,
+                      side: const BorderSide(color: AppColors.danger),
+                      minimumSize: const Size(0, 44),
+                    ),
+                    icon: const Icon(Icons.logout, size: 18),
+                    label: const Text('Logout'),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -30,7 +31,9 @@ class ApiClient {
         handler.next(options);
       },
       onError: (e, handler) {
+        debugPrint('[API] ${e.requestOptions.method} ${e.requestOptions.path} -> ${e.response?.statusCode} ${e.message}');
         if (e.response?.statusCode == 401) {
+          debugPrint('[API] 401 detected, forcing logout');
           _onUnauthorized?.call();
         }
         handler.next(e);

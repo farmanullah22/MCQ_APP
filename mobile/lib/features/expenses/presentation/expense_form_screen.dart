@@ -20,6 +20,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _dateController = TextEditingController();
   String? _category = 'other';
   DateTime? _expenseDate;
   String? _shopId;
@@ -28,6 +29,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   void initState() {
     super.initState();
     _expenseDate = DateTime.now();
+    _dateController.text = Formatters.date(_expenseDate!);
     _shopId = ref.read(dashboardControllerProvider).selectedShopId;
   }
 
@@ -35,7 +37,23 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _dateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _expenseDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        _expenseDate = picked;
+        _dateController.text = Formatters.date(picked);
+      });
+    }
   }
 
   @override
@@ -76,19 +94,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                 decoration: const InputDecoration(labelText: 'Amount (Rs.)', prefixIcon: Icon(Icons.payments_outlined)),
               ),
               const SizedBox(height: 14),
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _expenseDate ?? DateTime.now(),
-                    firstDate: DateTime(2020),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) setState(() => _expenseDate = picked);
-                },
-                child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Expense Date', prefixIcon: Icon(Icons.event_outlined)),
-                  child: Text(Formatters.date(_expenseDate)),
+              TextFormField(
+                controller: _dateController,
+                readOnly: true,
+                onTap: _pickDate,
+                decoration: const InputDecoration(
+                  labelText: 'Expense Date',
+                  prefixIcon: Icon(Icons.event_outlined),
+                  suffixIcon: Icon(Icons.calendar_today_outlined),
                 ),
               ),
               const SizedBox(height: 14),
