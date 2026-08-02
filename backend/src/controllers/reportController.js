@@ -6,10 +6,18 @@ const Expense = require('../models/Expense');
 const Product = require('../models/Product');
 const InventoryLog = require('../models/InventoryLog');
 const { recordAudit } = require('../middleware/auth');
+const { Types } = require('mongoose');
+
+const toObjectId = (v) => (v && Types.ObjectId.isValid(v) ? new Types.ObjectId(v) : null);
+
+const resolveShop = (req, fallback) => {
+  const shopId = req.user.role === 'manager' ? req.user.assignedShop._id : fallback || null;
+  return toObjectId(shopId);
+};
 
 const buildReport = asyncHandler(async (req, res) => {
   const { period = 'month', shopId } = req.query;
-  const scopedShopId = req.user.role === 'manager' ? req.user.assignedShop._id : shopId || null;
+  const scopedShopId = resolveShop(req, shopId);
 
   const range = stats.dateRange(period);
 
@@ -49,7 +57,7 @@ const buildReport = asyncHandler(async (req, res) => {
 
 const salesReport = asyncHandler(async (req, res) => {
   const { period = 'month', shopId } = req.query;
-  const scopedShopId = req.user.role === 'manager' ? req.user.assignedShop._id : shopId || null;
+  const scopedShopId = resolveShop(req, shopId);
   const range = stats.dateRange(period);
   const filter = { isDeleted: false };
   if (scopedShopId) filter.shop = scopedShopId;
@@ -76,7 +84,7 @@ const salesReport = asyncHandler(async (req, res) => {
 
 const expenseReport = asyncHandler(async (req, res) => {
   const { period = 'month', shopId } = req.query;
-  const scopedShopId = req.user.role === 'manager' ? req.user.assignedShop._id : shopId || null;
+  const scopedShopId = resolveShop(req, shopId);
   const range = stats.dateRange(period);
   const filter = { isDeleted: false };
   if (scopedShopId) filter.shop = scopedShopId;
@@ -101,7 +109,7 @@ const expenseReport = asyncHandler(async (req, res) => {
 });
 
 const inventoryReport = asyncHandler(async (req, res) => {
-  const shopId = req.user.role === 'manager' ? req.user.assignedShop._id : req.query.shopId || null;
+  const shopId = resolveShop(req, req.query.shopId);
   const filter = { isDeleted: false };
   if (shopId) filter.shop = shopId;
 
@@ -135,7 +143,7 @@ const exportCsv = (rows, headers, filename) => {
 
 const exportExcel = asyncHandler(async (req, res) => {
   const { type = 'sales', period = 'month', shopId } = req.query;
-  const scopedShopId = req.user.role === 'manager' ? req.user.assignedShop._id : shopId || null;
+  const scopedShopId = resolveShop(req, shopId);
   const range = stats.dateRange(period);
 
   let rows = [];

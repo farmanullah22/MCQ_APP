@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/repository_providers.dart';
 import '../../../core/services/fcm_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/status_views.dart';
+import '../models/login_preview.dart';
 import '../providers/auth_providers.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -21,20 +25,81 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscure = true;
 
+  Timer? _previewTimer;
+  LoginPreview? _preview;
+  bool _previewLoading = false;
+  String? _selectedShopId;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_schedulePreview);
+  }
+
   @override
   void dispose() {
+    _previewTimer?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  void _schedulePreview() {
+    _previewTimer?.cancel();
+    if (Validators.email(_emailController.text.trim()) != null) {
+      if (_preview != null || _previewLoading) {
+        setState(() {
+          _preview = null;
+          _selectedShopId = null;
+          _previewLoading = false;
+        });
+      }
+      return;
+    }
+    _previewTimer = Timer(const Duration(milliseconds: 450), _lookupPreview);
+  }
+
+  Future<void> _lookupPreview() async {
+    if (!mounted) return;
+    setState(() => _previewLoading = true);
+    try {
+      final preview = await ref.read(authRepositoryProvider).previewLogin(_emailController.text);
+      if (!mounted) return;
+      setState(() {
+        _preview = preview;
+        _previewLoading = false;
+        if (preview.isManager && preview.shops.isNotEmpty) {
+          _selectedShopId = _selectedShopId ?? preview.shops.first.id;
+        } else {
+          _selectedShopId = null;
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _preview = null;
+        _previewLoading = false;
+        _selectedShopId = null;
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final isManager = _preview?.isManager == true;
+    if (isManager && _selectedShopId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select your shop to continue.')),
+      );
+      return;
+    }
     FocusScope.of(context).unfocus();
     final fcmToken = await FcmService.instance.getToken();
     final ok = await ref.read(authControllerProvider.notifier).login(
           _emailController.text,
           _passwordController.text,
+          shopId: isManager ? _selectedShopId : null,
           fcmToken: fcmToken,
         );
     if (ok) return;
@@ -66,6 +131,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (lower.contains('unauthorized') || lower.contains('invalid email') || lower.contains('invalid credentials')) {
       return 'Incorrect email or password. Please check your credentials and try again.';
     }
+    if (lower.contains('selected shop') || lower.contains('assigned shop')) {
+      return 'The selected shop is not valid for this account.';
+    }
+    if (lower.contains('deactivated')) {
+      return 'This account has been deactivated. Contact the admin.';
+    }
     if (lower.contains('network') || lower.contains('connection') || lower.contains('timeout')) {
       return 'Could not reach the server. Check your internet connection and that the backend is running.';
     }
@@ -77,6 +148,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final loading = ref.watch(authControllerProvider.select((s) => s.status == AuthStatus.authenticating));
+    final isManager = _preview?.isManager == true;
+    final showShop = _previewLoading || isManager;
 
     return Scaffold(
       body: SafeArea(
@@ -124,6 +197,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        if (showShop)
+                          _ShopDropdown(
+                            loading: _previewLoading,
+                            shops: _preview?.shops ?? const [],
+                            value: _selectedShopId,
+                            enabled: _previewLoading == false && (_preview?.shops.isNotEmpty ?? false),
+                            onChanged: (v) => setState(() => _selectedShopId = v),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscure,
@@ -162,5 +246,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
+  }
+}
+
+class _ShopDropdown extends StatelessWidget {
+  const _ShopDropdown({
+    required this.loading,
+    required this.shops,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool loading;
+  final List<ShopOption> shops;
+  final String? value;
+  final bool enabled;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return loading
+        ? const InputDecorator(
+            decoration: InputDecoration(
+              labelText: 'Shop',
+              prefixIcon: Icon(Icons.store_outlined),
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                SizedBox(width: 12),
+                Text('Checking your shop...'),
+              ],
+            ),
+          )
+        : DropdownButtonFormField<String>(
+            key: ValueKey(shops.map((s) => s.id).join(',')),
+            initialValue: shops.any((s) => s.id == value) ? value : null,
+            decoration: const InputDecoration(
+              labelText: 'Shop',
+              prefixIcon: Icon(Icons.store_outlined),
+            ),
+            items: shops
+                .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                .toList(),
+            onChanged: enabled ? (v) => onChanged(v) : null,
+          );
   }
 }

@@ -1,14 +1,21 @@
 import '../../../core/api/api_client.dart';
+import '../models/login_preview.dart';
 import '../models/user.dart';
 
 class AuthRepository {
   AuthRepository(this._api);
   final ApiClient _api;
 
-  Future<({String token, User user})> login(String email, String password, {String? fcmToken}) async {
+  Future<({String token, User user})> login(
+    String email,
+    String password, {
+    String? shopId,
+    String? fcmToken,
+  }) async {
     final res = await _api.request('POST', '/auth/login', data: {
       'email': email.trim(),
       'password': password,
+      'shopId': ?shopId,
       'fcmToken': ?fcmToken,
     });
     final data = res['data'] as Map<String, dynamic>;
@@ -16,6 +23,11 @@ class AuthRepository {
       token: data['token'] as String,
       user: User.fromJson(data['user'] as Map<String, dynamic>),
     );
+  }
+
+  Future<LoginPreview> previewLogin(String email) async {
+    final res = await _api.request('GET', '/auth/preview', query: {'email': email.trim()});
+    return LoginPreview.fromJson(res['data'] as Map<String, dynamic>);
   }
 
   Future<void> logout({String? fcmToken}) async {

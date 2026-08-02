@@ -157,7 +157,7 @@ const topProducts = async (shopId, days = 30, limit = 5) => {
         revenue: { $sum: '$items.totalAmount' },
       },
     },
-    { $sort: { quantity: -1 } },
+    { $sort: { quantity: -1, revenue: -1 } },
     { $limit: limit },
   ]);
   return res.map((r) => ({ name: r._id, quantity: r.quantity, revenue: r.revenue }));

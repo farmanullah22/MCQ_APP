@@ -6,7 +6,7 @@ const { signToken, parseDeviceInfo } = require('../utils/jwt');
 const { recordAudit } = require('../middleware/auth');
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, shopId } = req.body;
   if (!email || !password) throw new ApiError(400, 'Email and password are required.');
 
   const user = await User.findOne({ email: email.toLowerCase() })
@@ -16,6 +16,15 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, 'Invalid email or password.');
   }
   if (!user.isActive) throw new ApiError(403, 'Your account has been deactivated.');
+
+  if (user.role === 'manager') {
+    if (!user.assignedShop) {
+      throw new ApiError(403, 'No shop is assigned to your account. Contact the admin.');
+    }
+    if (shopId && shopId.toString() !== user.assignedShop._id.toString()) {
+      throw new ApiError(400, 'The selected shop does not match your assigned shop.');
+    }
+  }
 
   user.lastLoginAt = new Date();
   if (req.body.fcmToken) user.fcmToken = req.body.fcmToken;
@@ -36,6 +45,39 @@ const login = asyncHandler(async (req, res) => {
   const token = signToken(user._id, user.role, user.assignedShop?._id);
 
   res.json(ApiResponse.ok('Login successful', { token, user: user.toPublicJSON() }));
+});
+
+const previewLogin = asyncHandler(async (req, res) => {
+  const email = (req.query.email || '').trim().toLowerCase();
+  if (!email) throw new ApiError(400, 'Email is required.');
+
+  const user = await User.findOne({ email }).populate('assignedShop', 'name address');
+  if (!user) {
+    res.json(ApiResponse.ok('Login preview fetched', { exists: false }));
+    return;
+  }
+
+  const shops =
+    user.role === 'manager'
+      ? user.assignedShop
+        ? [
+            {
+              id: user.assignedShop._id.toString(),
+              name: user.assignedShop.name,
+            },
+          ]
+        : []
+      : [];
+
+  res.json(
+    ApiResponse.ok('Login preview fetched', {
+      exists: true,
+      role: user.role,
+      name: user.name,
+      active: user.isActive,
+      shops,
+    })
+  );
 });
 
 const logout = asyncHandler(async (req, res) => {
@@ -189,6 +231,7 @@ const updateManager = asyncHandler(async (req, res) => {
 
 module.exports = {
   login,
+  previewLogin,
   logout,
   getProfile,
   updateProfile,

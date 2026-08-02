@@ -3,6 +3,7 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, parseDeviceInfo } = require('../utils/jwt');
 const AuditLog = require('../models/AuditLog');
+const { Types } = require('mongoose');
 
 const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -38,12 +39,13 @@ const restrictTo = (...roles) => (req, res, next) => {
 // Admin may pass ?shopId=..., managers are locked to their assigned shop.
 const scopedShop = asyncHandler(async (req, res, next) => {
   if (req.user.role === 'admin') {
-    req.shopId = req.query.shopId || req.body.shopId || null;
+    const raw = req.query.shopId || req.body.shopId || null;
+    req.shopId = raw && Types.ObjectId.isValid(raw) ? new Types.ObjectId(raw) : null;
   } else {
     if (!req.user.assignedShop) {
       return next(new ApiError(403, 'No shop is assigned to your account.'));
     }
-    req.shopId = req.user.assignedShop._id.toString();
+    req.shopId = req.user.assignedShop._id;
   }
   next();
 });

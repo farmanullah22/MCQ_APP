@@ -4,6 +4,7 @@ const { protect, restrictTo } = require('../middleware/auth');
 const router = express.Router();
 
 router.post('/login', authController.login);
+router.get('/preview', authController.previewLogin);
 
 router.post('/logout', protect, authController.logout);
 router.get('/profile', protect, authController.getProfile);
