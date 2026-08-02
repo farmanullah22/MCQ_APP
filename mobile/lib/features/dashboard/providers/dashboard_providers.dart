@@ -32,6 +32,10 @@ class DashboardState {
 class DashboardController extends Notifier<DashboardState> {
   @override
   DashboardState build() {
+    // Rebuild whenever the signed-in user changes so a previous session's
+    // selectedShopId can never leak into a new session (e.g. manager -> admin).
+    final user = ref.watch(authControllerProvider.select((s) => s.user));
+    final isAdmin = user?.isAdmin ?? true;
     // Defer initial loads until build() completes; touching `state` here
     // would read this provider before it is initialized (Riverpod readSelf).
     Future.microtask(() {
@@ -39,23 +43,19 @@ class DashboardController extends Notifier<DashboardState> {
       _loadShops();
       _load();
     });
-    return const DashboardState();
+    return DashboardState(
+      selectedShopId: isAdmin ? null : user?.assignedShopId,
+      shops: isAdmin
+          ? const []
+          : (user?.assignedShopId != null
+              ? [(id: user!.assignedShopId!, name: user.assignedShopName ?? 'My Shop')]
+              : const []),
+    );
   }
 
   Future<void> _loadShops() async {
     final user = ref.read(authControllerProvider).user;
-    if (user == null) return;
-    if (!user.isAdmin) {
-      final shopName = user.assignedShopName;
-      final shopId = user.assignedShopId;
-      if (shopId != null) {
-        state = state.copyWith(
-          selectedShopId: shopId,
-          shops: [(id: shopId, name: shopName ?? 'My Shop')],
-        );
-      }
-      return;
-    }
+    if (user == null || user.isAdmin == false) return;
     try {
       final shops = await ref.read(shopRepositoryProvider).getShops();
       state = state.copyWith(
@@ -69,8 +69,10 @@ class DashboardController extends Notifier<DashboardState> {
   Future<void> _load() async {
     state = state.copyWith(data: const AsyncValue.loading());
     try {
+      final user = ref.read(authControllerProvider).user;
+      final isAdmin = user?.isAdmin ?? true;
       final data = await ref.read(dashboardRepositoryProvider).getDashboard(
-            shopId: state.selectedShopId,
+            shopId: isAdmin ? null : (user?.assignedShopId ?? state.selectedShopId),
           );
       state = state.copyWith(data: AsyncValue.data(data));
     } catch (e, st) {
