@@ -27,31 +27,44 @@ class HomeShell extends ConsumerStatefulWidget {
 
 class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
-  final List<Widget?> _screens = List<Widget?>.filled(5, null);
+  final Map<String, Widget> _cache = {};
 
-  static const _tabs = [
-    DashboardScreen(),
-    InventoryScreen(),
-    SalesListScreen(),
-    ReportsScreen(),
-    ProfileScreen(),
-  ];
+  List<String> _routes(bool isAdmin) => isAdmin
+      ? const ['dashboard', 'inventory', 'sales', 'reports', 'profile']
+      : const ['dashboard', 'inventory', 'profile'];
+
+  Widget _screenFor(String route) => _cache.putIfAbsent(route, () {
+        switch (route) {
+          case 'dashboard':
+            return const DashboardScreen();
+          case 'inventory':
+            return const InventoryScreen();
+          case 'sales':
+            return const SalesListScreen();
+          case 'reports':
+            return const ReportsScreen();
+          case 'profile':
+            return const ProfileScreen();
+        }
+        return const SizedBox.shrink();
+      });
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final isAdmin = user?.isAdmin ?? false;
-
-    _screens[_index] ??= _tabs[_index];
+    final routes = _routes(isAdmin);
+    final index = _index < routes.length ? _index : routes.length - 1;
 
     return Scaffold(
       body: IndexedStack(
-        index: _index,
-        children: List.generate(_tabs.length, (i) => _screens[i] ?? const SizedBox.shrink()),
+        index: index,
+        children: [for (final route in routes) _screenFor(route)],
       ),
       drawer: _buildDrawer(context, isAdmin),
       bottomNavigationBar: _PremiumBottomNav(
-        currentIndex: _index,
+        currentIndex: index,
+        routes: routes,
         onTap: (i) => setState(() => _index = i),
       ),
     );
@@ -92,16 +105,18 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               ],
             ),
           ),
-          _DrawerItem(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: () => _go(0)),
-          _DrawerItem(icon: Icons.inventory_2_outlined, label: 'Inventory', onTap: () => _go(1)),
-          _DrawerItem(icon: Icons.point_of_sale_outlined, label: 'Sales', onTap: () => _go(2)),
-          _DrawerItem(icon: Icons.bar_chart_outlined, label: 'Reports', onTap: () => _go(3)),
-          _DrawerItem(icon: Icons.assessment_outlined, label: 'Analytics', onTap: () => _open(const AnalyticsScreen())),
-          _DrawerItem(icon: Icons.category_outlined, label: 'Categories', onTap: () => _open(const CategoryScreen())),
+          _DrawerItem(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: () => _go('dashboard', isAdmin)),
+          _DrawerItem(icon: Icons.inventory_2_outlined, label: 'Inventory', onTap: () => _go('inventory', isAdmin)),
+          if (isAdmin) ...[
+            _DrawerItem(icon: Icons.point_of_sale_outlined, label: 'Sales', onTap: () => _go('sales', isAdmin)),
+            _DrawerItem(icon: Icons.bar_chart_outlined, label: 'Reports', onTap: () => _go('reports', isAdmin)),
+          ],
           _DrawerItem(icon: Icons.shopping_cart_outlined, label: 'Products', onTap: () => _open(const ProductListScreen())),
           _DrawerItem(icon: Icons.receipt_long_outlined, label: 'Expenses', onTap: () => _open(const ExpenseListScreen())),
           if (isAdmin) ...[
             const Divider(),
+            _DrawerItem(icon: Icons.assessment_outlined, label: 'Analytics', onTap: () => _open(const AnalyticsScreen())),
+            _DrawerItem(icon: Icons.category_outlined, label: 'Categories', onTap: () => _open(const CategoryScreen())),
             _DrawerItem(icon: Icons.storefront_outlined, label: 'Shops', onTap: () => _open(const ShopsScreen())),
             _DrawerItem(icon: Icons.manage_accounts_outlined, label: 'Managers', onTap: () => _open(const ManagersScreen())),
             _DrawerItem(icon: Icons.history_outlined, label: 'Audit Logs', onTap: () => _open(const AuditLogsScreen())),
@@ -144,9 +159,9 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
-  void _go(int index) {
+  void _go(String route, bool isAdmin) {
     Navigator.of(context).pop();
-    setState(() => _index = index);
+    setState(() => _index = _routes(isAdmin).indexOf(route));
   }
 
   void _open(Widget screen) {
@@ -156,18 +171,20 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 }
 
 class _PremiumBottomNav extends StatelessWidget {
-  const _PremiumBottomNav({required this.currentIndex, required this.onTap});
+  const _PremiumBottomNav({required this.currentIndex, required this.routes, required this.onTap});
 
   final int currentIndex;
+  final List<String> routes;
   final ValueChanged<int> onTap;
 
-  static const _items = [
-    (icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard_rounded, label: 'Dashboard'),
-    (icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2_rounded, label: 'Inventory'),
-    (icon: Icons.point_of_sale_outlined, selectedIcon: Icons.point_of_sale_rounded, label: 'Sales'),
-    (icon: Icons.bar_chart_outlined, selectedIcon: Icons.bar_chart_rounded, label: 'Reports'),
-    (icon: Icons.person_outline_rounded, selectedIcon: Icons.person_rounded, label: 'Profile'),
-  ];
+  static (IconData, IconData, String) _meta(String route) => switch (route) {
+        'dashboard' => (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
+        'inventory' => (Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventory'),
+        'sales' => (Icons.point_of_sale_outlined, Icons.point_of_sale_rounded, 'Sales'),
+        'reports' => (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Reports'),
+        'profile' => (Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+        _ => (Icons.circle_outlined, Icons.circle, ''),
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -190,13 +207,13 @@ class _PremiumBottomNav extends StatelessWidget {
           ],
         ),
         child: Row(
-          children: List.generate(_items.length, (i) {
-            final item = _items[i];
+          children: List.generate(routes.length, (i) {
+            final (icon, selectedIcon, label) = _meta(routes[i]);
             return Expanded(
               child: _NavItem(
-                icon: item.icon,
-                selectedIcon: item.selectedIcon,
-                label: item.label,
+                icon: icon,
+                selectedIcon: selectedIcon,
+                label: label,
                 selected: i == currentIndex,
                 onTap: () => onTap(i),
               ),

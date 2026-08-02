@@ -42,7 +42,7 @@ class ReportState {
 class ReportController extends Notifier<ReportState> {
   @override
   ReportState build() {
-    _loadAll();
+    Future.microtask(_loadAll);
     return const ReportState();
   }
 

@@ -21,7 +21,7 @@ import '../../notifications/providers/notification_providers.dart';
 import '../../products/presentation/product_form_screen.dart';
 import '../../products/presentation/product_list_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
-import '../../sales/presentation/sale_form_screen.dart';
+import '../../sales/presentation/sales_list_screen.dart';
 import '../models/dashboard_data.dart';
 import '../providers/dashboard_providers.dart';
 
@@ -98,7 +98,7 @@ class DashboardScreen extends ConsumerWidget {
                     _TargetsCard(
                       cards: data.cards,
                       daily: data.daily,
-                      onOpenSales: () => _push(context, ref, const SaleFormScreen()),
+                      onAddExpense: () => _push(context, ref, const ExpenseFormScreen()),
                     ),
                     const SizedBox(height: 16),
                     if (data.cards.lowStockCount > 0)
@@ -114,48 +114,48 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   _StatsGrid(cards: data.cards, isAdmin: isAdmin),
-                  const SizedBox(height: 20),
-                  SectionHeader(
-                    title: 'Analytics',
-                    subtitle: 'Sales & profit trends',
-                    actionLabel: 'More',
-                    action: () => _push(context, ref, const ReportsScreen()),
-                  ),
-                  ChartCard(
-                    title: 'Daily Sales',
-                    subtitle: 'Last 14 days',
-                    height: 220,
-                    child: LineSalesChart(points: data.daily),
-                  ),
-                  ChartCard(
-                    title: 'Weekly Sales',
-                    subtitle: 'Last 12 weeks',
-                    height: 200,
-                    child: BarChartWidget(data: data.weekly, color: AppColors.primary),
-                  ),
-                  ChartCard(
-                    title: 'Monthly Revenue & Profit',
-                    subtitle: 'Last 12 months',
-                    height: 220,
-                    child: LineSalesChart(points: data.monthly, showExpenses: false),
-                  ),
-                  if (isAdmin && data.comparison.length > 1) ...[
+                  if (isAdmin) ...[
+                    const SizedBox(height: 20),
+                    SectionHeader(
+                      title: 'Analytics',
+                      subtitle: 'Sales & profit trends',
+                      actionLabel: 'More',
+                      action: () => _push(context, ref, const ReportsScreen()),
+                    ),
                     ChartCard(
-                      title: 'Shop Comparison',
-                      subtitle: 'Revenue per shop',
+                      title: 'Daily Sales',
+                      subtitle: 'Last 14 days',
+                      height: 220,
+                      child: LineSalesChart(points: data.daily),
+                    ),
+                    ChartCard(
+                      title: 'Weekly Sales',
+                      subtitle: 'Last 12 weeks',
                       height: 200,
-                      child: _ShopComparisonBars(comparison: data.comparison),
+                      child: BarChartWidget(data: data.weekly, color: AppColors.primary),
                     ),
-                  ],
-                  ChartCard(
-                    title: 'Expense Breakdown',
-                    subtitle: 'Last 30 days',
-                    height: 240,
-                    child: PieChartWidget(
-                      sections: data.expenseBreakdown.map((e) => (label: e.category, value: e.total)).toList(),
+                    ChartCard(
+                      title: 'Monthly Revenue & Profit',
+                      subtitle: 'Last 12 months',
+                      height: 220,
+                      child: LineSalesChart(points: data.monthly, showExpenses: false),
                     ),
-                  ),
-                  if (isAdmin && data.comparison.isNotEmpty) ...[
+                    if (data.comparison.length > 1) ...[
+                      ChartCard(
+                        title: 'Shop Comparison',
+                        subtitle: 'Revenue per shop',
+                        height: 200,
+                        child: _ShopComparisonBars(comparison: data.comparison),
+                      ),
+                    ],
+                    ChartCard(
+                      title: 'Expense Breakdown',
+                      subtitle: 'Last 30 days',
+                      height: 240,
+                      child: PieChartWidget(
+                        sections: data.expenseBreakdown.map((e) => (label: e.category, value: e.total)).toList(),
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     SectionHeader(
                       title: 'Shop Performance',
@@ -176,19 +176,21 @@ class DashboardScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
+                    SectionHeader(
+                      title: 'Manager Logs',
+                      subtitle: 'What managers edit, add or delete',
+                      actionLabel: 'View All',
+                      action: () => _push(context, ref, const AuditLogsScreen()),
+                    ),
+                    _ActivityCard(items: data.recentActivity),
                   ],
-                  const SizedBox(height: 20),
-                  SectionHeader(
-                    title: 'Recent Activity',
-                    subtitle: isAdmin ? 'Latest audit events' : 'Latest transactions',
-                    actionLabel: 'View All',
-                    action: () => _push(context, ref, const AuditLogsScreen()),
-                  ),
-                  _ActivityCard(items: data.recentActivity),
-                  const SizedBox(height: 24),
-                  SectionHeader(title: 'Quick Actions', subtitle: 'Jump straight to work'),
-                  const SizedBox(height: 4),
-                  _QuickActions(ref: ref, isAdmin: isAdmin),
+                  if (!isAdmin) ...[
+                    const SizedBox(height: 24),
+                    SectionHeader(title: 'Quick Actions', subtitle: 'Add products, stock & expenses'),
+                    const SizedBox(height: 4),
+                    _QuickActions(ref: ref),
+                  ],
                 ],
               ),
             );
@@ -210,15 +212,57 @@ class DashboardScreen extends ConsumerWidget {
   List<HeroSlide> _buildSlides(BuildContext context, WidgetRef ref, DashboardData data, bool isAdmin) {
     final cards = data.cards;
     final top = data.topProducts.isNotEmpty ? data.topProducts.first : null;
+
+    if (!isAdmin) {
+      return [
+        HeroSlide(
+          title: 'Stock Value',
+          value: Formatters.currency(cards.totalStockValue),
+          caption: '${cards.totalProducts} products in inventory',
+          buttonLabel: 'Manage Stock',
+          icon: Icons.inventory_2_outlined,
+          gradient: AppColors.emeraldGradient,
+          onPressed: () => _push(context, ref, const InventoryScreen()),
+        ),
+        HeroSlide(
+          title: 'Low Stock Alert',
+          value: '${cards.lowStockCount}',
+          caption: cards.lowStockCount > 0 ? 'items below threshold' : 'all items well stocked',
+          buttonLabel: 'View Inventory',
+          icon: Icons.error_outline_rounded,
+          gradient: AppColors.warningGradient,
+          onPressed: () => _push(context, ref, const InventoryScreen()),
+        ),
+        HeroSlide(
+          title: 'Expenses Today',
+          value: Formatters.currency(cards.expensesToday),
+          caption: 'record today\'s spending',
+          buttonLabel: 'Add Expense',
+          icon: Icons.add_card_outlined,
+          gradient: AppColors.pinkGradient,
+          onPressed: () => _push(context, ref, const ExpenseFormScreen()),
+        ),
+        HeroSlide(
+          title: 'Product Catalog',
+          value: '${cards.totalProducts}',
+          caption: 'products ready to manage',
+          buttonLabel: 'Add Product',
+          icon: Icons.add_box_outlined,
+          gradient: AppColors.royalGradient,
+          onPressed: () => _push(context, ref, const ProductFormScreen()),
+        ),
+      ];
+    }
+
     return [
       HeroSlide(
         title: 'Today\'s Sales',
         value: Formatters.currency(cards.salesToday),
         caption: '${cards.salesTodayCount} transactions',
-        buttonLabel: 'Add Sale',
+        buttonLabel: 'View Sales',
         icon: Icons.point_of_sale_rounded,
         gradient: AppColors.emeraldGradient,
-        onPressed: () => _push(context, ref, const SaleFormScreen()),
+        onPressed: () => _push(context, ref, const SalesListScreen()),
       ),
       HeroSlide(
         title: 'Monthly Revenue',
@@ -233,7 +277,7 @@ class DashboardScreen extends ConsumerWidget {
         title: 'Low Stock Alert',
         value: '${cards.lowStockCount}',
         caption: cards.lowStockCount > 0 ? 'items below threshold' : 'all items well stocked',
-        buttonLabel: 'Manage Stock',
+        buttonLabel: 'View Stock',
         icon: Icons.inventory_2_outlined,
         gradient: AppColors.warningGradient,
         onPressed: () => _push(context, ref, const InventoryScreen()),
@@ -243,10 +287,10 @@ class DashboardScreen extends ConsumerWidget {
           title: 'Top Selling Product',
           value: top.name,
           caption: '${Formatters.compact(top.revenue)} revenue',
-          buttonLabel: 'Add Stock',
+          buttonLabel: 'View Products',
           icon: Icons.trending_up_rounded,
           gradient: AppColors.goldGradient,
-          onPressed: () => _push(context, ref, const StockInScreen()),
+          onPressed: () => _push(context, ref, const ProductListScreen()),
         ),
     ];
   }
@@ -266,20 +310,18 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _TargetsCard extends StatelessWidget {
-  const _TargetsCard({required this.cards, required this.daily, required this.onOpenSales});
+  const _TargetsCard({required this.cards, required this.daily, required this.onAddExpense});
 
   final DashboardCards cards;
   final List<ChartPoint> daily;
-  final VoidCallback onOpenSales;
+  final VoidCallback onAddExpense;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final len = daily.length;
-    final avgSales = len == 0 ? 0.0 : daily.fold<double>(0, (a, c) => a + c.sales) / len;
     final avgExpense = len == 0 ? 0.0 : daily.fold<double>(0, (a, c) => a + c.expenses) / len;
-    final salesTarget = avgSales > 0 ? avgSales * 1.1 : 1.0;
     final expenseBudget = avgExpense > 0 ? avgExpense * 1.25 : 1.0;
 
     return Container(
@@ -301,29 +343,21 @@ class _TargetsCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.flag_outlined, size: 18, color: AppColors.secondary),
+              const Icon(Icons.account_balance_wallet_outlined, size: 18, color: AppColors.secondary),
               const SizedBox(width: 8),
-              Text('Today\'s Targets', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
+              Text('Expense Budget', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
               const Spacer(),
               TextButton.icon(
-                onPressed: onOpenSales,
+                onPressed: onAddExpense,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('New Sale'),
+                label: const Text('Add Expense'),
                 style: TextButton.styleFrom(foregroundColor: AppColors.secondary, padding: const EdgeInsets.symmetric(horizontal: 8)),
               ),
             ],
           ),
           const SizedBox(height: 10),
           _TargetRow(
-            label: 'Sales Target',
-            value: Formatters.currency(cards.salesToday),
-            target: salesTarget,
-            progress: salesTarget == 0 ? 0 : (cards.salesToday / salesTarget).clamp(0.0, 1.0),
-            color: AppColors.primary,
-          ),
-          const SizedBox(height: 14),
-          _TargetRow(
-            label: 'Expense Budget',
+            label: 'Today\'s Spending vs Daily Budget',
             value: Formatters.currency(cards.expensesToday),
             target: expenseBudget,
             progress: expenseBudget == 0 ? 0 : (cards.expensesToday / expenseBudget).clamp(0.0, 1.0),
@@ -561,20 +595,13 @@ class _NotificationBell extends ConsumerWidget {
 }
 
 class _QuickActions extends ConsumerWidget {
-  const _QuickActions({required this.ref, required this.isAdmin});
+  const _QuickActions({required this.ref});
 
   final WidgetRef ref;
-  final bool isAdmin;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final actions = <({IconData icon, String label, LinearGradient gradient, Widget screen})>[
-      (
-        icon: Icons.add_circle_outline_rounded,
-        label: 'Create Sale',
-        gradient: AppColors.emeraldGradient,
-        screen: const SaleFormScreen(),
-      ),
       (
         icon: Icons.add_box_outlined,
         label: 'Add Product',
@@ -583,9 +610,15 @@ class _QuickActions extends ConsumerWidget {
       ),
       (
         icon: Icons.arrow_downward_rounded,
-        label: 'Add Stock',
+        label: 'Stock In',
         gradient: AppColors.infoGradient,
         screen: const StockInScreen(),
+      ),
+      (
+        icon: Icons.arrow_upward_rounded,
+        label: 'Stock Out',
+        gradient: AppColors.warningGradient,
+        screen: const StockOutScreen(),
       ),
       (
         icon: Icons.add_card_outlined,
@@ -596,14 +629,8 @@ class _QuickActions extends ConsumerWidget {
       (
         icon: Icons.inventory_2_outlined,
         label: 'Inventory',
-        gradient: AppColors.warningGradient,
+        gradient: AppColors.emeraldGradient,
         screen: const InventoryScreen(),
-      ),
-      (
-        icon: Icons.description_outlined,
-        label: 'Reports',
-        gradient: AppColors.goldGradient,
-        screen: const ReportsScreen(),
       ),
       (
         icon: Icons.category_outlined,
@@ -611,13 +638,6 @@ class _QuickActions extends ConsumerWidget {
         gradient: AppColors.violetGradient,
         screen: const ProductListScreen(),
       ),
-      if (isAdmin)
-        (
-          icon: Icons.receipt_long_outlined,
-          label: 'Audit Logs',
-          gradient: AppColors.royalGradient,
-          screen: const AuditLogsScreen(),
-        ),
     ];
 
     return SizedBox(
@@ -683,20 +703,22 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final grid = <Widget>[
-      StatCard(
-        title: 'Sales Today',
-        value: cards.salesToday,
-        icon: Icons.point_of_sale_rounded,
-        color: AppColors.primary,
-        subtitle: '${cards.salesTodayCount} transactions',
-      ),
-      StatCard(
-        title: 'Monthly Revenue',
-        value: cards.monthlyRevenue,
-        icon: Icons.payments_outlined,
-        color: AppColors.success,
-        subtitle: 'Profit ${Formatters.compact(cards.monthlyProfit)}',
-      ),
+      if (isAdmin)
+        StatCard(
+          title: 'Sales Today',
+          value: cards.salesToday,
+          icon: Icons.point_of_sale_rounded,
+          color: AppColors.primary,
+          subtitle: '${cards.salesTodayCount} transactions',
+        ),
+      if (isAdmin)
+        StatCard(
+          title: 'Monthly Revenue',
+          value: cards.monthlyRevenue,
+          icon: Icons.payments_outlined,
+          color: AppColors.success,
+          subtitle: 'Profit ${Formatters.compact(cards.monthlyProfit)}',
+        ),
       StatCard(
         title: 'Monthly Expenses',
         value: cards.monthlyExpenses,

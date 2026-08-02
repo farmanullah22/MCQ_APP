@@ -33,6 +33,9 @@ class User {
       shopName = assigned['name']?.toString();
     } else if (assigned != null) {
       shopId = assigned.toString();
+    } else {
+      shopId = json['assignedShopId']?.toString();
+      shopName = json['assignedShopName']?.toString();
     }
     return User(
       id: (json['id'] ?? json['_id']).toString(),
