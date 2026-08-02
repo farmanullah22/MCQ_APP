@@ -24,7 +24,7 @@ class HeroSlide {
 
 /// Auto-playing premium hero slider with page indicators and gradient slides.
 class DashboardHeroSlider extends StatefulWidget {
-  const DashboardHeroSlider({super.key, required this.slides, this.height = 188});
+  const DashboardHeroSlider({super.key, required this.slides, this.height = 200});
 
   final List<HeroSlide> slides;
   final double height;
@@ -150,19 +150,19 @@ class _SlideCard extends StatelessWidget {
             child: _GlowCircle(radius: 64, color: Colors.black.withValues(alpha: 0.08)),
           ),
           Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(slide.icon, color: Colors.white, size: 20),
+                      child: Icon(slide.icon, color: Colors.white, size: 18),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -211,7 +211,7 @@ class _SlideCard extends StatelessWidget {
                     ],
                   ),
                 ],
-                const SizedBox(height: 14),
+                const SizedBox(height: 12),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Material(
