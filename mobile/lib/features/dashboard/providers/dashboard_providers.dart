@@ -93,3 +93,7 @@ class DashboardController extends Notifier<DashboardState> {
 
 final dashboardControllerProvider =
     NotifierProvider<DashboardController, DashboardState>(DashboardController.new);
+
+final shopDetailProvider = FutureProvider.family<DashboardData, String>((ref, shopId) {
+  return ref.watch(dashboardRepositoryProvider).getDashboard(shopId: shopId);
+});

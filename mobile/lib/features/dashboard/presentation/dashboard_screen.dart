@@ -1,11 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/activity_timeline.dart';
 import '../../../core/widgets/app_bar_brand.dart';
-import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/dashboard_hero_slider.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/shop_card.dart';
@@ -24,6 +23,7 @@ import '../../reports/presentation/reports_screen.dart';
 import '../../sales/presentation/sales_list_screen.dart';
 import '../models/dashboard_data.dart';
 import '../providers/dashboard_providers.dart';
+import 'shop_detail_screen.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -57,15 +57,6 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          if (isAdmin && state.shops.length > 1)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: _ShopFilterDropdown(
-                shops: state.shops,
-                selected: state.selectedShopId,
-                onChanged: (id) => ref.read(dashboardControllerProvider.notifier).selectShop(id),
-              ),
-            ),
           const _NotificationBell(),
           IconButton(
             tooltip: 'Refresh',
@@ -107,75 +98,44 @@ class DashboardScreen extends ConsumerWidget {
                         onTap: () => _push(context, ref, const InventoryScreen()),
                       ),
                     const SizedBox(height: 20),
+                    SectionHeader(
+                      title: 'Business Summary',
+                      subtitle: user?.assignedShopName ?? 'Your shop',
+                    ),
+                    const SizedBox(height: 4),
+                    _StatsGrid(cards: data.cards),
                   ],
-                  SectionHeader(
-                    title: 'Business Summary',
-                    subtitle: isAdmin ? 'Across all shops' : (user?.assignedShopName ?? 'Your shop'),
-                  ),
-                  const SizedBox(height: 4),
-                  _StatsGrid(cards: data.cards, isAdmin: isAdmin),
                   if (isAdmin) ...[
                     const SizedBox(height: 20),
                     SectionHeader(
-                      title: 'Analytics',
-                      subtitle: 'Sales & profit trends',
-                      actionLabel: 'More',
-                      action: () => _push(context, ref, const ReportsScreen()),
+                      title: 'Shops',
+                      subtitle: 'Select a shop to view its full details',
                     ),
-                    ChartCard(
-                      title: 'Daily Sales',
-                      subtitle: 'Last 14 days',
-                      height: 220,
-                      child: LineSalesChart(points: data.daily),
-                    ),
-                    ChartCard(
-                      title: 'Weekly Sales',
-                      subtitle: 'Last 12 weeks',
-                      height: 200,
-                      child: BarChartWidget(data: data.weekly, color: AppColors.primary),
-                    ),
-                    ChartCard(
-                      title: 'Monthly Revenue & Profit',
-                      subtitle: 'Last 12 months',
-                      height: 220,
-                      child: LineSalesChart(points: data.monthly, showExpenses: false),
-                    ),
-                    if (data.comparison.length > 1) ...[
-                      ChartCard(
-                        title: 'Shop Comparison',
-                        subtitle: 'Revenue per shop',
-                        height: 200,
-                        child: _ShopComparisonBars(comparison: data.comparison),
-                      ),
-                    ],
-                    ChartCard(
-                      title: 'Expense Breakdown',
-                      subtitle: 'Last 30 days',
-                      height: 240,
-                      child: PieChartWidget(
-                        sections: data.expenseBreakdown.map((e) => (label: e.category, value: e.total)).toList(),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SectionHeader(
-                      title: 'Shop Performance',
-                      subtitle: 'Revenue & profit per shop',
-                    ),
-                    ...data.comparison.indexed.map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: ShopCard(
-                          name: e.$2.shopName ?? 'Shop ${e.$1 + 1}',
-                          manager: e.$2.manager,
-                          revenue: e.$2.sales,
-                          profit: e.$2.profit,
-                          saleCount: e.$2.saleCount,
-                          gradient: _shopGradients[e.$1 % _shopGradients.length],
-                          onOpen: () =>
-                              ref.read(dashboardControllerProvider.notifier).selectShop(e.$2.shopId),
+                    if (data.comparison.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(
+                          child: Text('No shops available yet', style: TextStyle(fontSize: 13)),
+                        ),
+                      )
+                    else
+                      ...data.comparison.indexed.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 14),
+                          child: ShopCard(
+                            name: e.$2.shopName ?? 'Shop ${e.$1 + 1}',
+                            manager: e.$2.manager,
+                            revenue: e.$2.sales,
+                            profit: e.$2.profit,
+                            saleCount: e.$2.saleCount,
+                            gradient: _shopGradients[e.$1 % _shopGradients.length],
+                            onTap: () =>
+                                _openShop(context, e.$2.shopId, e.$2.shopName, e.$2.manager, e.$2.sales, e.$2.profit, e.$2.saleCount),
+                            onOpen: () =>
+                                _openShop(context, e.$2.shopId, e.$2.shopName, e.$2.manager, e.$2.sales, e.$2.profit, e.$2.saleCount),
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 20),
                     SectionHeader(
                       title: 'Manager Logs',
@@ -306,6 +266,22 @@ class DashboardScreen extends ConsumerWidget {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => screen))
         .then((_) => ref.read(dashboardControllerProvider.notifier).refresh());
+  }
+
+  void _openShop(BuildContext context, String shopId, String? shopName, String? manager,
+      double revenue, double profit, int saleCount) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ShopDetailScreen(
+          shopId: shopId,
+          shopName: shopName,
+          manager: manager,
+          revenue: revenue,
+          profit: profit,
+          saleCount: saleCount,
+        ),
+      ),
+    );
   }
 }
 
@@ -502,57 +478,6 @@ class _ActivityCard extends StatelessWidget {
   }
 }
 
-class _ShopFilterDropdown extends StatelessWidget {
-  const _ShopFilterDropdown({
-    required this.shops,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  final List<({String id, String name})> shops;
-  final String? selected;
-  final ValueChanged<String?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: theme.brightness == Brightness.dark
-            ? const Color(0xFF121C1A)
-            : Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.brightness == Brightness.dark
-              ? const Color(0xFF1B2926)
-              : const Color(0xFFE2EDEA),
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String?>(
-          value: selected,
-          hint: const Text('All Shops', style: TextStyle(fontSize: 13)),
-          style: TextStyle(
-            fontSize: 13,
-            color: theme.brightness == Brightness.dark
-                ? AppColors.darkTextPrimary
-                : AppColors.textPrimary,
-          ),
-          items: [
-            const DropdownMenuItem(value: null, child: Text('All Shops')),
-            ...shops.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))),
-          ],
-          onChanged: (v) {
-            if (v != selected) onChanged(v);
-          },
-        ),
-      ),
-    );
-  }
-}
-
 class _NotificationBell extends ConsumerWidget {
   const _NotificationBell();
 
@@ -695,30 +620,13 @@ class _QuickActions extends ConsumerWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.cards, required this.isAdmin});
+  const _StatsGrid({required this.cards});
 
   final DashboardCards cards;
-  final bool isAdmin;
 
   @override
   Widget build(BuildContext context) {
-    final grid = <Widget>[
-      if (isAdmin)
-        StatCard(
-          title: 'Sales Today',
-          value: cards.salesToday,
-          icon: Icons.point_of_sale_rounded,
-          color: AppColors.primary,
-          subtitle: '${cards.salesTodayCount} transactions',
-        ),
-      if (isAdmin)
-        StatCard(
-          title: 'Monthly Revenue',
-          value: cards.monthlyRevenue,
-          icon: Icons.payments_outlined,
-          color: AppColors.success,
-          subtitle: 'Profit ${Formatters.compact(cards.monthlyProfit)}',
-        ),
+    final stats = <Widget>[
       StatCard(
         title: 'Monthly Expenses',
         value: cards.monthlyExpenses,
@@ -739,14 +647,6 @@ class _StatsGrid extends StatelessWidget {
         icon: Icons.savings_outlined,
         color: AppColors.secondary,
       ),
-      if (isAdmin)
-        StatCard(
-          title: 'Shops',
-          value: cards.totalShops,
-          icon: Icons.storefront_outlined,
-          color: AppColors.warning,
-          valueType: StatValueType.number,
-        ),
     ];
 
     return LayoutBuilder(
@@ -755,66 +655,9 @@ class _StatsGrid extends StatelessWidget {
         return Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: grid.map((w) => SizedBox(width: width, child: w)).toList(),
+          children: stats.map((w) => SizedBox(width: width, child: w)).toList(),
         );
       },
-    );
-  }
-}
-
-class _ShopComparisonBars extends StatelessWidget {
-  const _ShopComparisonBars({required this.comparison});
-
-  final List<ShopComparison> comparison;
-
-  @override
-  Widget build(BuildContext context) {
-    final maxSales = comparison.fold<double>(0, (a, c) => c.sales > a ? c.sales : a);
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: comparison.indexed.map((e) {
-              final height = maxSales == 0 ? 0.0 : (e.$2.sales / maxSales) * 100;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        height == 0 ? '0' : '${(e.$2.sales / 1000).round()}k',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        height: height,
-                        decoration: BoxDecoration(
-                          color: e.$1.isEven ? AppColors.primary : AppColors.accent,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: comparison.indexed
-              .map((e) => Expanded(
-                    child: Text(
-                      e.$2.shopName ?? 'Shop ${e.$1 + 1}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                  ))
-              .toList(),
-        ),
-      ],
     );
   }
 }
