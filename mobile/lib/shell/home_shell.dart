@@ -16,7 +16,6 @@ import '../features/sales/presentation/sales_list_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/shops/presentation/shops_screen.dart';
-import '../features/auth/presentation/login_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -151,9 +150,6 @@ class _HomeShellState extends ConsumerState<HomeShell> {
               if (confirmed != true) return;
               navigator.pop();
               await ref.read(authControllerProvider.notifier).logout();
-              if (navigator.mounted) {
-                navigator.pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
-              }
             },
           ),
         ],
