@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/app_logo.dart';
 import '../providers/auth_providers.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -58,7 +57,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
             opacity: _fade,
             child: ScaleTransition(
               scale: Tween(begin: 0.9, end: 1.0).animate(_fade),
-              child: AppLogo(size: 84, dark: isDark),
+              child: Image.asset(
+                'lib/images/logo.png',
+                width: 180,
+                height: 180,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
         ),

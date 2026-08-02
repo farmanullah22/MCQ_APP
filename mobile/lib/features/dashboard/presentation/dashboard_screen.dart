@@ -69,92 +69,111 @@ class DashboardScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           gradient: isDark ? AppGradients.bgDark : AppGradients.bg,
         ),
-        child: state.data.when(
-          loading: () => const LoadingView(),
-          error: (e, st) => ErrorView(
-            message: e.toString(),
-            onRetry: () => ref.read(dashboardControllerProvider.notifier).refresh(),
-          ),
-          data: (data) {
-            final slides = _buildSlides(context, ref, data, isAdmin);
-            return RefreshIndicator(
-              onRefresh: () => ref.read(dashboardControllerProvider.notifier).refresh(),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
-                children: [
-                  DashboardHeroSlider(slides: slides),
-                  const SizedBox(height: 20),
-                  if (!isAdmin) ...[
-                    _TargetsCard(
-                      cards: data.cards,
-                      daily: data.daily,
-                      onAddExpense: () => _push(context, ref, const ExpenseFormScreen()),
-                    ),
-                    const SizedBox(height: 16),
-                    if (data.cards.lowStockCount > 0)
-                      _StockAlertBanner(
-                        count: data.cards.lowStockCount,
-                        onTap: () => _push(context, ref, const InventoryScreen()),
-                      ),
-                    const SizedBox(height: 20),
-                    SectionHeader(
-                      title: 'Business Summary',
-                      subtitle: user?.assignedShopName ?? 'Your shop',
-                    ),
-                    const SizedBox(height: 4),
-                    _StatsGrid(cards: data.cards),
-                  ],
-                  if (isAdmin) ...[
-                    const SizedBox(height: 20),
-                    SectionHeader(
-                      title: 'Shops',
-                      subtitle: 'Select a shop to view its full details',
-                    ),
-                    if (data.comparison.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                          child: Text('No shops available yet', style: TextStyle(fontSize: 13)),
-                        ),
-                      )
-                    else
-                      ...data.comparison.indexed.map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: ShopCard(
-                            name: e.$2.shopName ?? 'Shop ${e.$1 + 1}',
-                            manager: e.$2.manager,
-                            revenue: e.$2.sales,
-                            profit: e.$2.profit,
-                            saleCount: e.$2.saleCount,
-                            gradient: _shopGradients[e.$1 % _shopGradients.length],
-                            onTap: () =>
-                                _openShop(context, e.$2.shopId, e.$2.shopName, e.$2.manager, e.$2.sales, e.$2.profit, e.$2.saleCount),
-                            onOpen: () =>
-                                _openShop(context, e.$2.shopId, e.$2.shopName, e.$2.manager, e.$2.sales, e.$2.profit, e.$2.saleCount),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 20),
-                    SectionHeader(
-                      title: 'Manager Logs',
-                      subtitle: 'What managers edit, add or delete',
-                      actionLabel: 'View All',
-                      action: () => _push(context, ref, const AuditLogsScreen()),
-                    ),
-                    _ActivityCard(items: data.recentActivity),
-                  ],
-                  if (!isAdmin) ...[
-                    const SizedBox(height: 24),
-                    SectionHeader(title: 'Quick Actions', subtitle: 'Add products, stock & expenses'),
-                    const SizedBox(height: 4),
-                    _QuickActions(ref: ref),
-                  ],
-                ],
+        child: Stack(
+          children: [
+            Positioned(
+              top: -40,
+              right: -60,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: isDark ? 0.07 : 0.06,
+                  child: Image.asset(
+                    'lib/images/logo.png',
+                    width: 260,
+                    height: 260,
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
-            );
-          },
+            ),
+            state.data.when(
+              loading: () => const LoadingView(),
+              error: (e, st) => ErrorView(
+                message: e.toString(),
+                onRetry: () => ref.read(dashboardControllerProvider.notifier).refresh(),
+              ),
+              data: (data) {
+                final slides = _buildSlides(context, ref, data, isAdmin);
+                return RefreshIndicator(
+                  onRefresh: () => ref.read(dashboardControllerProvider.notifier).refresh(),
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                    children: [
+                      DashboardHeroSlider(slides: slides),
+                      const SizedBox(height: 20),
+                      if (!isAdmin) ...[
+                        _TargetsCard(
+                          cards: data.cards,
+                          daily: data.daily,
+                          onAddExpense: () => _push(context, ref, const ExpenseFormScreen()),
+                        ),
+                        const SizedBox(height: 16),
+                        if (data.cards.lowStockCount > 0)
+                          _StockAlertBanner(
+                            count: data.cards.lowStockCount,
+                            onTap: () => _push(context, ref, const InventoryScreen()),
+                          ),
+                        const SizedBox(height: 20),
+                        SectionHeader(
+                          title: 'Business Summary',
+                          subtitle: user?.assignedShopName ?? 'Your shop',
+                        ),
+                        const SizedBox(height: 4),
+                        _StatsGrid(cards: data.cards),
+                      ],
+                      if (isAdmin) ...[
+                        const SizedBox(height: 20),
+                        SectionHeader(
+                          title: 'Shops',
+                          subtitle: 'Select a shop to view its full details',
+                        ),
+                        if (data.comparison.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: Text('No shops available yet', style: TextStyle(fontSize: 13)),
+                            ),
+                          )
+                        else
+                          ...data.comparison.indexed.map(
+                            (e) => Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: ShopCard(
+                                name: e.$2.shopName ?? 'Shop ${e.$1 + 1}',
+                                manager: e.$2.manager,
+                                revenue: e.$2.sales,
+                                profit: e.$2.profit,
+                                saleCount: e.$2.saleCount,
+                                gradient: _shopGradients[e.$1 % _shopGradients.length],
+                                onTap: () =>
+                                    _openShop(context, e.$2.shopId, e.$2.shopName, e.$2.manager, e.$2.sales, e.$2.profit, e.$2.saleCount),
+                                onOpen: () =>
+                                    _openShop(context, e.$2.shopId, e.$2.shopName, e.$2.manager, e.$2.sales, e.$2.profit, e.$2.saleCount),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                        SectionHeader(
+                          title: 'Manager Logs',
+                          subtitle: 'What managers edit, add or delete',
+                          actionLabel: 'View All',
+                          action: () => _push(context, ref, const AuditLogsScreen()),
+                        ),
+                        _ActivityCard(items: data.recentActivity),
+                      ],
+                      if (!isAdmin) ...[
+                        const SizedBox(height: 24),
+                        SectionHeader(title: 'Quick Actions', subtitle: 'Add products, stock & expenses'),
+                        const SizedBox(height: 4),
+                        _QuickActions(ref: ref),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
