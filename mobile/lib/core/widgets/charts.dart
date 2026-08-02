@@ -140,8 +140,8 @@ class LineSalesChart extends StatelessWidget {
           horizontalInterval: (maxY / 4).clamp(1, double.infinity),
           getDrawingHorizontalLine: (v) => FlLine(
             color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2E2E2E)
-                : const Color(0xFFEDE7E0),
+                ? AppColors.darkBorder
+                : AppColors.border,
             strokeWidth: 1,
           ),
         ),
@@ -242,8 +242,8 @@ class BarChartWidget extends StatelessWidget {
           drawVerticalLine: false,
           getDrawingHorizontalLine: (v) => FlLine(
             color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF2E2E2E)
-                : const Color(0xFFEDE7E0),
+                ? AppColors.darkBorder
+                : AppColors.border,
             strokeWidth: 1,
           ),
         ),

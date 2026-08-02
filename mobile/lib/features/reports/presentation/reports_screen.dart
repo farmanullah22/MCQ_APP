@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -30,7 +31,13 @@ class ReportsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reports'),
+        title: Row(
+          children: [
+            const AppBarBrand(showText: false),
+            const SizedBox(width: 10),
+            Text('Reports'),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Refresh',

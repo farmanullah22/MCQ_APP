@@ -25,6 +25,7 @@ class ChartPoint {
 class ShopComparison {
   final String shopId;
   final String? shopName;
+  final String? manager;
   final double sales;
   final double expenses;
   final double profit;
@@ -33,6 +34,7 @@ class ShopComparison {
   const ShopComparison({
     required this.shopId,
     this.shopName,
+    this.manager,
     this.sales = 0,
     this.expenses = 0,
     this.profit = 0,
@@ -42,6 +44,7 @@ class ShopComparison {
   factory ShopComparison.fromJson(Map<String, dynamic> json) => ShopComparison(
         shopId: (json['shopId'] ?? json['shop'] ?? '').toString(),
         shopName: json['shopName']?.toString(),
+        manager: json['manager']?.toString(),
         sales: (json['sales'] as num?)?.toDouble() ?? 0,
         expenses: (json['expenses'] as num?)?.toDouble() ?? 0,
         profit: (json['profit'] as num?)?.toDouble() ?? 0,
@@ -61,9 +64,40 @@ class ExpenseCategoryTotal {
       );
 }
 
+class TopProduct {
+  final String name;
+  final int quantity;
+  final double revenue;
+
+  const TopProduct({required this.name, this.quantity = 0, this.revenue = 0});
+
+  factory TopProduct.fromJson(Map<String, dynamic> json) => TopProduct(
+        name: json['name']?.toString() ?? 'Product',
+        quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+        revenue: (json['revenue'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class ActivityItem {
+  final String type;
+  final String title;
+  final String subtitle;
+  final String? time;
+
+  const ActivityItem({required this.type, this.title = '', this.subtitle = '', this.time});
+
+  factory ActivityItem.fromJson(Map<String, dynamic> json) => ActivityItem(
+        type: json['type']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        subtitle: json['subtitle']?.toString() ?? '',
+        time: json['time']?.toString(),
+      );
+}
+
 class DashboardCards {
   final int totalShops;
   final int totalProducts;
+  final int lowStockCount;
   final double totalStockValue;
   final double salesToday;
   final int salesTodayCount;
@@ -78,6 +112,7 @@ class DashboardCards {
   const DashboardCards({
     this.totalShops = 0,
     this.totalProducts = 0,
+    this.lowStockCount = 0,
     this.totalStockValue = 0,
     this.salesToday = 0,
     this.salesTodayCount = 0,
@@ -93,6 +128,7 @@ class DashboardCards {
   factory DashboardCards.fromJson(Map<String, dynamic> json) => DashboardCards(
         totalShops: (json['totalShops'] as num?)?.toInt() ?? 0,
         totalProducts: (json['totalProducts'] as num?)?.toInt() ?? 0,
+        lowStockCount: (json['lowStockCount'] as num?)?.toInt() ?? 0,
         totalStockValue: (json['totalStockValue'] as num?)?.toDouble() ?? 0,
         salesToday: (json['salesToday'] as num?)?.toDouble() ?? 0,
         salesTodayCount: (json['salesTodayCount'] as num?)?.toInt() ?? 0,
@@ -115,6 +151,8 @@ class DashboardData {
   final List<ShopComparison> comparison;
   final List<ExpenseCategoryTotal> expenseBreakdown;
   final List<ShopSummary> shops;
+  final List<TopProduct> topProducts;
+  final List<ActivityItem> recentActivity;
 
   const DashboardData({
     this.cards = const DashboardCards(),
@@ -125,6 +163,8 @@ class DashboardData {
     this.comparison = const [],
     this.expenseBreakdown = const [],
     this.shops = const [],
+    this.topProducts = const [],
+    this.recentActivity = const [],
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
@@ -138,6 +178,8 @@ class DashboardData {
       comparison: (charts['comparison'] as List?)?.map((e) => ShopComparison.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
       expenseBreakdown: (charts['expenseBreakdown'] as List?)?.map((e) => ExpenseCategoryTotal.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
       shops: (json['shops'] as List?)?.map((e) => ShopSummary.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
+      topProducts: (json['topProducts'] as List?)?.map((e) => TopProduct.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
+      recentActivity: (json['recentActivity'] as List?)?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
     );
   }
 }

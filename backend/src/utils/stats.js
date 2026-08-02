@@ -127,13 +127,40 @@ const yearlySeries = async (shopId, years = 5) => {
   return points;
 };
 
-const shopComparison = async (shopIds) => {
+const shopComparison = async (shops) => {
   const out = [];
-  for (const shopId of shopIds) {
-    const [sales, expenses] = await Promise.all([getSalesTotal(null, shopId), getExpenseTotal(null, shopId)]);
-    out.push({ shopId, sales: sales.total, expenses: expenses.total, profit: sales.profit, saleCount: sales.count });
+  for (const shop of shops) {
+    const [sales, expenses] = await Promise.all([getSalesTotal(null, shop._id), getExpenseTotal(null, shop._id)]);
+    out.push({
+      shopId: shop._id,
+      shopName: shop.name,
+      manager: shop.manager ? (shop.manager.name || shop.manager) : null,
+      sales: sales.total,
+      expenses: expenses.total,
+      profit: sales.profit,
+      saleCount: sales.count,
+    });
   }
   return out;
+};
+
+const topProducts = async (shopId, days = 30, limit = 5) => {
+  const filter = { isDeleted: false, createdAt: { $gte: new Date(Date.now() - days * 86400000) } };
+  if (shopId) filter.shop = shopId;
+  const res = await Sale.aggregate([
+    { $match: filter },
+    { $unwind: '$items' },
+    {
+      $group: {
+        _id: '$items.productName',
+        quantity: { $sum: '$items.quantity' },
+        revenue: { $sum: '$items.totalAmount' },
+      },
+    },
+    { $sort: { quantity: -1 } },
+    { $limit: limit },
+  ]);
+  return res.map((r) => ({ name: r._id, quantity: r.quantity, revenue: r.revenue }));
 };
 
 const expenseBreakdown = async (shopId, days = 30) => {
@@ -159,4 +186,5 @@ module.exports = {
   yearlySeries,
   shopComparison,
   expenseBreakdown,
+  topProducts,
 };

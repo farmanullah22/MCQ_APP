@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/status_views.dart';
 import '../models/inventory_log.dart';
 import '../providers/inventory_providers.dart';
@@ -18,7 +19,13 @@ class InventoryScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Inventory'),
+        title: Row(
+          children: [
+            const AppBarBrand(showText: false),
+            const SizedBox(width: 10),
+            Text('Inventory'),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Low stock',

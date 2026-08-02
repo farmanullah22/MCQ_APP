@@ -1,5 +1,6 @@
 const Shop = require('../models/Shop');
 const Product = require('../models/Product');
+const AuditLog = require('../models/AuditLog');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/ApiResponse');
 const stats = require('../utils/stats');
@@ -13,12 +14,17 @@ const getDashboard = asyncHandler(async (req, res) => {
   const productFilter = { isDeleted: false };
   if (shopId) productFilter.shop = shopId;
 
-  const [shops, productCount, stockValue] = await Promise.all([
+  const [shops, productCount, stockValue, lowStock] = await Promise.all([
     Shop.find(shopFilter).populate('manager', 'name'),
     Product.countDocuments(productFilter),
     Product.aggregate([
       { $match: productFilter },
       { $group: { _id: null, value: { $sum: { $multiply: ['$quantity', '$costPrice'] } } } },
+    ]),
+    Product.aggregate([
+      { $match: productFilter },
+      { $match: { $expr: { $lte: ['$quantity', '$lowStockThreshold'] } } },
+      { $count: 'count' },
     ]),
   ]);
 
@@ -31,18 +37,24 @@ const getDashboard = asyncHandler(async (req, res) => {
     stats.getExpenseTotal(stats.dateRange('year'), shopId),
   ]);
 
-  const [daily, weekly, monthly, yearly] = await Promise.all([
+  const [daily, weekly, monthly, yearly, topProducts] = await Promise.all([
     stats.dailySeries(shopId, 14),
     stats.weeklySeries(shopId, 12),
     stats.monthlySeries(shopId, 12),
     stats.yearlySeries(shopId, 5),
+    stats.topProducts(shopId, 30, 5),
   ]);
 
-  const comparison = isAdmin
-    ? await stats.shopComparison(shops.map((s) => s._id))
-    : await stats.shopComparison([shopId]);
+  const comparison = await stats.shopComparison(shops);
 
   const expenseBreakdown = await stats.expenseBreakdown(shopId, 30);
+
+  const activityFilter = {};
+  if (shopId) activityFilter.shopId = shopId;
+  const recentLogs = await AuditLog.find(activityFilter)
+    .sort({ timestamp: -1 })
+    .limit(8)
+    .select('actionType remarks timestamp performedByName shopName');
 
   res.json(
     ApiResponse.ok('Dashboard data fetched', {
@@ -50,6 +62,7 @@ const getDashboard = asyncHandler(async (req, res) => {
         totalShops: shops.length,
         totalProducts: productCount,
         totalStockValue: stockValue[0]?.value || 0,
+        lowStockCount: lowStock[0]?.count || 0,
         salesToday: todaySales.total,
         salesTodayCount: todaySales.count,
         expensesToday: todayExpenses.total,
@@ -61,6 +74,13 @@ const getDashboard = asyncHandler(async (req, res) => {
         yearlyExpenses: yearExpenses.total,
       },
       charts: { daily, weekly, monthly, yearly, comparison, expenseBreakdown },
+      topProducts,
+      recentActivity: recentLogs.map((l) => ({
+        type: l.actionType,
+        title: l.remarks || l.actionType,
+        subtitle: l.shopName || (l.performedByName || ''),
+        time: l.timestamp,
+      })),
       shops: shops.map((s) => ({ id: s._id, name: s.name, manager: s.manager?.name || '—' })),
     })
   );

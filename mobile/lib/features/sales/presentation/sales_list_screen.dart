@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -21,7 +22,13 @@ class SalesListScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sales'),
+        title: Row(
+          children: [
+            const AppBarBrand(showText: false),
+            const SizedBox(width: 10),
+            Text('Sales'),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Refresh',

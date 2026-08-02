@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
+import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../auth/providers/auth_providers.dart';
 import 'settings_screen.dart';
@@ -94,7 +95,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
+        title: Row(
+          children: [
+            const AppBarBrand(showText: false),
+            const SizedBox(width: 10),
+            Text('Profile'),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Settings',

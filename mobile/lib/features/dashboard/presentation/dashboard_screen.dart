@@ -2,19 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/activity_timeline.dart';
+import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/charts.dart';
+import '../../../core/widgets/dashboard_hero_slider.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/shop_card.dart';
 import '../../../core/widgets/stat_card.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../audit/presentation/audit_logs_screen.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
+import '../../inventory/presentation/inventory_screen.dart';
 import '../../inventory/presentation/stock_screens.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../notifications/providers/notification_providers.dart';
 import '../../products/presentation/product_form_screen.dart';
 import '../../products/presentation/product_list_screen.dart';
 import '../../reports/presentation/reports_screen.dart';
+import '../../sales/presentation/sale_form_screen.dart';
 import '../models/dashboard_data.dart';
 import '../providers/dashboard_providers.dart';
 
@@ -26,15 +33,25 @@ class DashboardScreen extends ConsumerWidget {
     final user = ref.watch(currentUserProvider);
     final state = ref.watch(dashboardControllerProvider);
     final isAdmin = user?.isAdmin ?? false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgTop = isDark ? AppGradients.bgDark.colors.first : AppGradients.bg.colors.first;
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: bgTop,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        leading: const Padding(
+          padding: EdgeInsets.only(left: 16, right: 4),
+          child: AppBarBrand(showText: false, size: 32),
+        ),
+        titleSpacing: 8,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('${_greeting()}, ${user?.name.split(' ').first ?? ''}'),
             Text(
-              user?.isAdmin == true ? 'Admin Dashboard' : (user?.assignedShopName ?? 'Manager Dashboard'),
+              isAdmin ? 'Admin Dashboard' : (user?.assignedShopName ?? 'Manager Dashboard'),
               style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodySmall?.color),
             ),
           ],
@@ -57,63 +74,181 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: state.data.when(
-        loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(message: e.toString(), onRetry: () => ref.read(dashboardControllerProvider.notifier).refresh()),
-        data: (data) => RefreshIndicator(
-          onRefresh: () => ref.read(dashboardControllerProvider.notifier).refresh(),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-            children: [
-              _QuickActions(ref: ref, isAdmin: isAdmin),
-              const SizedBox(height: 16),
-              _StatsGrid(cards: data.cards),
-              SectionHeader(
-                title: 'Analytics',
-                subtitle: 'Sales & profit trends',
-                actionLabel: 'More',
-                action: () => _navigate(context, const ReportsScreen()),
-              ),
-              ChartCard(
-                title: 'Daily Sales',
-                subtitle: 'Last 14 days',
-                height: 220,
-                child: LineSalesChart(points: data.daily),
-              ),
-              ChartCard(
-                title: 'Weekly Sales',
-                subtitle: 'Last 12 weeks',
-                height: 200,
-                child: BarChartWidget(data: data.weekly, color: AppColors.primary),
-              ),
-              ChartCard(
-                title: 'Monthly Revenue & Profit',
-                subtitle: 'Last 12 months',
-                height: 220,
-                child: LineSalesChart(points: data.monthly, showExpenses: false),
-              ),
-              if (isAdmin && data.comparison.length > 1) ...[
-                ChartCard(
-                  title: 'Shop Comparison',
-                  subtitle: 'Revenue per shop',
-                  height: 200,
-                  child: _ShopComparisonBars(comparison: data.comparison),
-                ),
-              ],
-              ChartCard(
-                title: 'Expense Breakdown',
-                subtitle: 'Last 30 days',
-                height: 240,
-                child: PieChartWidget(
-                  sections: data.expenseBreakdown.map((e) => (label: e.category, value: e.total)).toList(),
-                ),
-              ),
-            ],
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: isDark ? AppGradients.bgDark : AppGradients.bg,
+        ),
+        child: state.data.when(
+          loading: () => const LoadingView(),
+          error: (e, st) => ErrorView(
+            message: e.toString(),
+            onRetry: () => ref.read(dashboardControllerProvider.notifier).refresh(),
           ),
+          data: (data) {
+            final slides = _buildSlides(context, ref, data, isAdmin);
+            return RefreshIndicator(
+              onRefresh: () => ref.read(dashboardControllerProvider.notifier).refresh(),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                children: [
+                  DashboardHeroSlider(slides: slides),
+                  const SizedBox(height: 20),
+                  if (!isAdmin) ...[
+                    _TargetsCard(
+                      cards: data.cards,
+                      daily: data.daily,
+                      onOpenSales: () => _push(context, ref, const SaleFormScreen()),
+                    ),
+                    const SizedBox(height: 16),
+                    if (data.cards.lowStockCount > 0)
+                      _StockAlertBanner(
+                        count: data.cards.lowStockCount,
+                        onTap: () => _push(context, ref, const InventoryScreen()),
+                      ),
+                    const SizedBox(height: 20),
+                  ],
+                  SectionHeader(
+                    title: 'Business Summary',
+                    subtitle: isAdmin ? 'Across all shops' : (user?.assignedShopName ?? 'Your shop'),
+                  ),
+                  const SizedBox(height: 4),
+                  _StatsGrid(cards: data.cards, isAdmin: isAdmin),
+                  const SizedBox(height: 20),
+                  SectionHeader(
+                    title: 'Analytics',
+                    subtitle: 'Sales & profit trends',
+                    actionLabel: 'More',
+                    action: () => _push(context, ref, const ReportsScreen()),
+                  ),
+                  ChartCard(
+                    title: 'Daily Sales',
+                    subtitle: 'Last 14 days',
+                    height: 220,
+                    child: LineSalesChart(points: data.daily),
+                  ),
+                  ChartCard(
+                    title: 'Weekly Sales',
+                    subtitle: 'Last 12 weeks',
+                    height: 200,
+                    child: BarChartWidget(data: data.weekly, color: AppColors.primary),
+                  ),
+                  ChartCard(
+                    title: 'Monthly Revenue & Profit',
+                    subtitle: 'Last 12 months',
+                    height: 220,
+                    child: LineSalesChart(points: data.monthly, showExpenses: false),
+                  ),
+                  if (isAdmin && data.comparison.length > 1) ...[
+                    ChartCard(
+                      title: 'Shop Comparison',
+                      subtitle: 'Revenue per shop',
+                      height: 200,
+                      child: _ShopComparisonBars(comparison: data.comparison),
+                    ),
+                  ],
+                  ChartCard(
+                    title: 'Expense Breakdown',
+                    subtitle: 'Last 30 days',
+                    height: 240,
+                    child: PieChartWidget(
+                      sections: data.expenseBreakdown.map((e) => (label: e.category, value: e.total)).toList(),
+                    ),
+                  ),
+                  if (isAdmin && data.comparison.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    SectionHeader(
+                      title: 'Shop Performance',
+                      subtitle: 'Revenue & profit per shop',
+                    ),
+                    ...data.comparison.indexed.map(
+                      (e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 14),
+                        child: ShopCard(
+                          name: e.$2.shopName ?? 'Shop ${e.$1 + 1}',
+                          manager: e.$2.manager,
+                          revenue: e.$2.sales,
+                          profit: e.$2.profit,
+                          saleCount: e.$2.saleCount,
+                          gradient: _shopGradients[e.$1 % _shopGradients.length],
+                          onOpen: () =>
+                              ref.read(dashboardControllerProvider.notifier).selectShop(e.$2.shopId),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SectionHeader(
+                    title: 'Recent Activity',
+                    subtitle: isAdmin ? 'Latest audit events' : 'Latest transactions',
+                    actionLabel: 'View All',
+                    action: () => _push(context, ref, const AuditLogsScreen()),
+                  ),
+                  _ActivityCard(items: data.recentActivity),
+                  const SizedBox(height: 24),
+                  SectionHeader(title: 'Quick Actions', subtitle: 'Jump straight to work'),
+                  const SizedBox(height: 4),
+                  _QuickActions(ref: ref, isAdmin: isAdmin),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  static const _shopGradients = [
+    AppColors.emeraldGradient,
+    AppColors.royalGradient,
+    AppColors.goldGradient,
+    AppColors.violetGradient,
+    AppColors.warningGradient,
+    AppColors.pinkGradient,
+  ];
+
+  List<HeroSlide> _buildSlides(BuildContext context, WidgetRef ref, DashboardData data, bool isAdmin) {
+    final cards = data.cards;
+    final top = data.topProducts.isNotEmpty ? data.topProducts.first : null;
+    return [
+      HeroSlide(
+        title: 'Today\'s Sales',
+        value: Formatters.currency(cards.salesToday),
+        caption: '${cards.salesTodayCount} transactions',
+        buttonLabel: 'Add Sale',
+        icon: Icons.point_of_sale_rounded,
+        gradient: AppColors.emeraldGradient,
+        onPressed: () => _push(context, ref, const SaleFormScreen()),
+      ),
+      HeroSlide(
+        title: 'Monthly Revenue',
+        value: Formatters.currency(cards.monthlyRevenue),
+        caption: 'Profit ${Formatters.compact(cards.monthlyProfit)}',
+        buttonLabel: 'View Reports',
+        icon: Icons.payments_outlined,
+        gradient: AppColors.royalGradient,
+        onPressed: () => _push(context, ref, const ReportsScreen()),
+      ),
+      HeroSlide(
+        title: 'Low Stock Alert',
+        value: '${cards.lowStockCount}',
+        caption: cards.lowStockCount > 0 ? 'items below threshold' : 'all items well stocked',
+        buttonLabel: 'Manage Stock',
+        icon: Icons.inventory_2_outlined,
+        gradient: AppColors.warningGradient,
+        onPressed: () => _push(context, ref, const InventoryScreen()),
+      ),
+      if (top != null)
+        HeroSlide(
+          title: 'Top Selling Product',
+          value: top.name,
+          caption: '${Formatters.compact(top.revenue)} revenue',
+          buttonLabel: 'Add Stock',
+          icon: Icons.trending_up_rounded,
+          gradient: AppColors.goldGradient,
+          onPressed: () => _push(context, ref, const StockInScreen()),
+        ),
+    ];
   }
 
   String _greeting() {
@@ -123,8 +258,213 @@ class DashboardScreen extends ConsumerWidget {
     return 'Good Evening';
   }
 
-  void _navigate(BuildContext context, Widget screen) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  void _push(BuildContext context, WidgetRef ref, Widget screen) {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => screen))
+        .then((_) => ref.read(dashboardControllerProvider.notifier).refresh());
+  }
+}
+
+class _TargetsCard extends StatelessWidget {
+  const _TargetsCard({required this.cards, required this.daily, required this.onOpenSales});
+
+  final DashboardCards cards;
+  final List<ChartPoint> daily;
+  final VoidCallback onOpenSales;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final len = daily.length;
+    final avgSales = len == 0 ? 0.0 : daily.fold<double>(0, (a, c) => a + c.sales) / len;
+    final avgExpense = len == 0 ? 0.0 : daily.fold<double>(0, (a, c) => a + c.expenses) / len;
+    final salesTarget = avgSales > 0 ? avgSales * 1.1 : 1.0;
+    final expenseBudget = avgExpense > 0 ? avgExpense * 1.25 : 1.0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.secondary.withValues(alpha: isDark ? 0.22 : 0.12),
+            theme.colorScheme.surface,
+          ],
+        ),
+        border: Border.all(color: AppColors.secondary.withValues(alpha: isDark ? 0.30 : 0.22)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.flag_outlined, size: 18, color: AppColors.secondary),
+              const SizedBox(width: 8),
+              Text('Today\'s Targets', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: onOpenSales,
+                icon: const Icon(Icons.add, size: 16),
+                label: const Text('New Sale'),
+                style: TextButton.styleFrom(foregroundColor: AppColors.secondary, padding: const EdgeInsets.symmetric(horizontal: 8)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _TargetRow(
+            label: 'Sales Target',
+            value: Formatters.currency(cards.salesToday),
+            target: salesTarget,
+            progress: salesTarget == 0 ? 0 : (cards.salesToday / salesTarget).clamp(0.0, 1.0),
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: 14),
+          _TargetRow(
+            label: 'Expense Budget',
+            value: Formatters.currency(cards.expensesToday),
+            target: expenseBudget,
+            progress: expenseBudget == 0 ? 0 : (cards.expensesToday / expenseBudget).clamp(0.0, 1.0),
+            color: AppColors.danger,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TargetRow extends StatelessWidget {
+  const _TargetRow({
+    required this.label,
+    required this.value,
+    required this.target,
+    required this.progress,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final double target;
+  final double progress;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: theme.textTheme.bodySmall?.color),
+              ),
+            ),
+            Text(
+              '$value  /  ${Formatters.compact(target)}',
+              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: progress,
+            minHeight: 8,
+            backgroundColor: color.withValues(alpha: isDark ? 0.18 : 0.12),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StockAlertBanner extends StatelessWidget {
+  const _StockAlertBanner({required this.count, required this.onTap});
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: AppColors.warningGradient,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.warning.withValues(alpha: 0.30),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.20), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.error_outline_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$count product${count == 1 ? '' : 's'} running low on stock',
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      'Reorder before they run out',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActivityCard extends StatelessWidget {
+  const _ActivityCard({required this.items});
+
+  final List<ActivityItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color ?? theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark ? const Color(0xFF1B2926) : const Color(0xFFE2EDEA),
+        ),
+      ),
+      child: ActivityTimeline(items: items),
+    );
   }
 }
 
@@ -141,14 +481,20 @@ class _ShopFilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF2A2A2A)
-            : const Color(0xFFF0EAE2),
-        borderRadius: BorderRadius.circular(10),
+        color: theme.brightness == Brightness.dark
+            ? const Color(0xFF121C1A)
+            : Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.brightness == Brightness.dark
+              ? const Color(0xFF1B2926)
+              : const Color(0xFFE2EDEA),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String?>(
@@ -156,7 +502,7 @@ class _ShopFilterDropdown extends StatelessWidget {
           hint: const Text('All Shops', style: TextStyle(fontSize: 13)),
           style: TextStyle(
             fontSize: 13,
-            color: Theme.of(context).brightness == Brightness.dark
+            color: theme.brightness == Brightness.dark
                 ? AppColors.darkTextPrimary
                 : AppColors.textPrimary,
           ),
@@ -222,79 +568,103 @@ class _QuickActions extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final actions = <({IconData icon, String label, Widget screen})>[
+    final actions = <({IconData icon, String label, LinearGradient gradient, Widget screen})>[
+      (
+        icon: Icons.add_circle_outline_rounded,
+        label: 'Create Sale',
+        gradient: AppColors.emeraldGradient,
+        screen: const SaleFormScreen(),
+      ),
       (
         icon: Icons.add_box_outlined,
         label: 'Add Product',
+        gradient: AppColors.royalGradient,
         screen: const ProductFormScreen(),
       ),
       (
-        icon: Icons.arrow_downward,
+        icon: Icons.arrow_downward_rounded,
         label: 'Add Stock',
+        gradient: AppColors.infoGradient,
         screen: const StockInScreen(),
+      ),
+      (
+        icon: Icons.add_card_outlined,
+        label: 'Add Expense',
+        gradient: AppColors.pinkGradient,
+        screen: const ExpenseFormScreen(),
+      ),
+      (
+        icon: Icons.inventory_2_outlined,
+        label: 'Inventory',
+        gradient: AppColors.warningGradient,
+        screen: const InventoryScreen(),
       ),
       (
         icon: Icons.description_outlined,
         label: 'Reports',
+        gradient: AppColors.goldGradient,
         screen: const ReportsScreen(),
       ),
       (
         icon: Icons.category_outlined,
         label: 'Products',
+        gradient: AppColors.violetGradient,
         screen: const ProductListScreen(),
       ),
       if (isAdmin)
         (
           icon: Icons.receipt_long_outlined,
           label: 'Audit Logs',
+          gradient: AppColors.royalGradient,
           screen: const AuditLogsScreen(),
         ),
-      (
-        icon: Icons.add_card_outlined,
-        label: 'Add Expense',
-        screen: const ExpenseFormScreen(),
-      ),
     ];
 
     return SizedBox(
-      height: 92,
+      height: 76,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: actions.length,
         separatorBuilder: (_, _) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final a = actions[index];
-          return InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => a.screen),
-            ),
-            child: Container(
-              width: 92,
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? AppColors.darkSurface
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? const Color(0xFF2E2E2E)
-                      : const Color(0xFFEDE7E0),
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(a.icon, color: AppColors.primary),
-                  const SizedBox(height: 8),
-                  Text(
-                    a.label,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          return Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(18),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => a.screen))
+                  .then((_) => ref.read(dashboardControllerProvider.notifier).refresh()),
+              child: Ink(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: a.gradient.colors,
                   ),
-                ],
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: a.gradient.colors.first.withValues(alpha: 0.28),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Icon(a.icon, color: Colors.white, size: 19),
+                      const SizedBox(width: 9),
+                      Text(
+                        a.label,
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );
@@ -305,88 +675,65 @@ class _QuickActions extends ConsumerWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  const _StatsGrid({required this.cards});
+  const _StatsGrid({required this.cards, required this.isAdmin});
 
   final DashboardCards cards;
+  final bool isAdmin;
 
   @override
   Widget build(BuildContext context) {
+    final grid = <Widget>[
+      StatCard(
+        title: 'Sales Today',
+        value: cards.salesToday,
+        icon: Icons.point_of_sale_rounded,
+        color: AppColors.primary,
+        subtitle: '${cards.salesTodayCount} transactions',
+      ),
+      StatCard(
+        title: 'Monthly Revenue',
+        value: cards.monthlyRevenue,
+        icon: Icons.payments_outlined,
+        color: AppColors.success,
+        subtitle: 'Profit ${Formatters.compact(cards.monthlyProfit)}',
+      ),
+      StatCard(
+        title: 'Monthly Expenses',
+        value: cards.monthlyExpenses,
+        icon: Icons.account_balance_wallet_outlined,
+        color: AppColors.danger,
+      ),
+      StatCard(
+        title: 'Total Products',
+        value: cards.totalProducts,
+        icon: Icons.inventory_2_outlined,
+        color: AppColors.info,
+        valueType: StatValueType.number,
+        subtitle: cards.lowStockCount > 0 ? '${cards.lowStockCount} low on stock' : 'fully stocked',
+      ),
+      StatCard(
+        title: 'Stock Value',
+        value: cards.totalStockValue,
+        icon: Icons.savings_outlined,
+        color: AppColors.secondary,
+      ),
+      if (isAdmin)
+        StatCard(
+          title: 'Shops',
+          value: cards.totalShops,
+          icon: Icons.storefront_outlined,
+          color: AppColors.warning,
+          valueType: StatValueType.number,
+        ),
+    ];
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = (constraints.maxWidth - 12) / 2;
         return Wrap(
           spacing: 12,
           runSpacing: 12,
-          children: [
-            SizedBox(
-              width: width,
-              child: StatCard(
-                title: 'Sales Today',
-                value: cards.salesToday,
-                icon: Icons.today_outlined,
-                iconColor: AppColors.primary,
-                subtitle: '${cards.salesTodayCount} transactions',
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: StatCard(
-                title: 'Monthly Revenue',
-                value: cards.monthlyRevenue,
-                icon: Icons.payments_outlined,
-                iconColor: AppColors.success,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: StatCard(
-                title: 'Monthly Profit',
-                value: cards.monthlyProfit,
-                icon: Icons.trending_up,
-                iconColor: AppColors.accent,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: StatCard(
-                title: 'Expenses Today',
-                value: cards.expensesToday,
-                icon: Icons.account_balance_wallet_outlined,
-                iconColor: AppColors.danger,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: StatCard(
-                title: 'Total Products',
-                value: cards.totalProducts,
-                icon: Icons.inventory_2_outlined,
-                iconColor: AppColors.info,
-                valueType: StatValueType.number,
-              ),
-            ),
-            SizedBox(
-              width: width,
-              child: StatCard(
-                title: 'Stock Value',
-                value: cards.totalStockValue,
-                icon: Icons.savings_outlined,
-                iconColor: AppColors.secondary,
-              ),
-            ),
-            if (cards.totalShops > 0)
-              SizedBox(
-                width: width,
-                child: StatCard(
-                  title: 'Shops',
-                  value: cards.totalShops,
-                  icon: Icons.storefront_outlined,
-                  iconColor: AppColors.warning,
-                  valueType: StatValueType.number,
-                  onTap: cards.totalShops > 1 ? null : null,
-                ),
-              ),
-          ],
+          children: grid.map((w) => SizedBox(width: width, child: w)).toList(),
         );
       },
     );
