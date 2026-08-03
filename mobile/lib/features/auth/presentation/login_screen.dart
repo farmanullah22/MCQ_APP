@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -13,8 +14,8 @@ import '../../../core/utils/validators.dart';
 import '../models/login_preview.dart';
 import '../providers/auth_providers.dart';
 
-/// Premium luxury login screen — black & gold, carpet photo backdrop,
-/// frosted glass card with a golden gradient border.
+/// Premium luxury login screen — black & gold, carpet showroom backdrop,
+/// glassmorphism cards, gold gradient elements and rich entrance animations.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -23,11 +24,10 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   static const _gold = Color(0xFFD4AF37);
-  static const _goldLight = Color(0xFFE9CE7A);
+  static const _goldLight = Color(0xFFF7D488);
   static const _goldDark = Color(0xFFB8860B);
-  static const _black = Color(0xFF050505);
   static const _rememberKey = 'login_remember_email';
 
   final _formKey = GlobalKey<FormState>();
@@ -43,28 +43,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1300),
+    duration: const Duration(milliseconds: 1400),
   )..forward();
   late final Animation<double> _logoFade = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0, 0.4, curve: Curves.easeOut),
+    curve: const Interval(0, 0.3, curve: Curves.easeOut),
+  );
+  late final Animation<double> _taglineFade = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.12, 0.42, curve: Curves.easeOut),
+  );
+  late final Animation<double> _dividerFade = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
   );
   late final Animation<double> _cardFade = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.2, 0.85, curve: Curves.easeOut),
+    curve: const Interval(0.28, 0.85, curve: Curves.easeOut),
   );
   late final Animation<Offset> _cardSlide = Tween<Offset>(
-    begin: const Offset(0, 0.16),
+    begin: const Offset(0, 0.14),
     end: Offset.zero,
   ).animate(
     CurvedAnimation(
       parent: _controller,
-      curve: const Interval(0.2, 0.9, curve: Curves.easeOutCubic),
+      curve: const Interval(0.28, 0.9, curve: Curves.easeOutCubic),
     ),
   );
-  late final Animation<double> _trustFade = CurvedAnimation(
+  late final Animation<double> _featuresFade = CurvedAnimation(
     parent: _controller,
-    curve: const Interval(0.55, 1, curve: Curves.easeOut),
+    curve: const Interval(0.5, 0.9, curve: Curves.easeOut),
+  );
+  late final Animation<double> _demoFade = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.62, 1, curve: Curves.easeOut),
   );
 
   @override
@@ -222,7 +234,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final showShop = _previewLoading || isManager;
 
     return Scaffold(
-      backgroundColor: _black,
+      backgroundColor: const Color(0xFF050505),
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -230,29 +242,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             'lib/images/backgrounimg.jfif',
             fit: BoxFit.cover,
           ),
+          // Dark overlay 60-65% keeps the showroom visible.
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  _black.withValues(alpha: 0.92),
-                  _black.withValues(alpha: 0.55),
-                  _black.withValues(alpha: 0.9),
+                  const Color(0xFF050505).withValues(alpha: 0.72),
+                  const Color(0xFF050505).withValues(alpha: 0.6),
+                  const Color(0xFF050505).withValues(alpha: 0.7),
                 ],
-                stops: const [0, 0.45, 1],
+                stops: const [0, 0.5, 1],
               ),
             ),
           ),
+          const _GoldParticles(),
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 30),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
+                  constraints: const BoxConstraints(maxWidth: 460),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // ---- Hero: logo + tagline + golden divider ----
                       FadeTransition(
                         opacity: _logoFade,
                         child: Image.asset(
@@ -261,7 +276,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           fit: BoxFit.contain,
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 6),
+                      FadeTransition(
+                        opacity: _taglineFade,
+                        child: Text(
+                          'Premium Carpets & Qaleen',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 3,
+                            color: _goldLight,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      FadeTransition(
+                        opacity: _dividerFade,
+                        child: const _CurvedDivider(),
+                      ),
+                      const SizedBox(height: 22),
+                      // ---- Login glass card ----
                       SlideTransition(
                         position: _cardSlide,
                         child: FadeTransition(
@@ -269,10 +304,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           child: _buildGlassCard(loading, showShop, isManager),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
+                      // ---- Features glass card ----
                       FadeTransition(
-                        opacity: _trustFade,
-                        child: const _TrustRow(),
+                        opacity: _featuresFade,
+                        child: const _FeaturesCard(),
+                      ),
+                      const SizedBox(height: 20),
+                      // ---- Demo accounts glass card ----
+                      FadeTransition(
+                        opacity: _demoFade,
+                        child: const _DemoCard(),
                       ),
                     ],
                   ),
@@ -285,43 +327,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     );
   }
 
+  // ---------------------------------------------------------------- hero --
+
   Widget _buildGlassCard(bool loading, bool showShop, bool isManager) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_goldLight, _gold, _goldDark],
-        ),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.65),
+            color: Colors.black.withValues(alpha: 0.6),
             blurRadius: 32,
             offset: const Offset(0, 18),
           ),
           BoxShadow(
-            color: _gold.withValues(alpha: 0.25),
-            blurRadius: 34,
+            color: _gold.withValues(alpha: 0.18),
+            blurRadius: 26,
             spreadRadius: -6,
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(29),
+        borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            margin: const EdgeInsets.all(1.4),
-            padding: const EdgeInsets.fromLTRB(20, 26, 20, 22),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(28),
-              gradient: const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xE6121212), Color(0xF0050505)],
+              color: const Color(0x59000000), // rgba(0,0,0,0.35)
+              border: Border.all(
+                color: _gold.withValues(alpha: 0.5),
+                width: 1.1,
               ),
             ),
+            padding: const EdgeInsets.fromLTRB(20, 26, 20, 22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -336,7 +374,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     'Welcome Back',
                     textAlign: TextAlign.center,
                     style: GoogleFonts.playfairDisplay(
-                      fontSize: 30,
+                      fontSize: 32,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
                     ),
@@ -390,7 +428,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         onFieldSubmitted: (_) => _submit(),
                         style: const TextStyle(color: Colors.white),
                         cursorColor: _gold,
-                        validator: (v) => Validators.required(v, 'Password is required'),
+                        validator: (v) =>
+                            Validators.required(v, 'Password is required'),
                         decoration: _luxeDecoration(
                           'Password',
                           Icons.lock_outline,
@@ -402,7 +441,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                               color: _gold,
                               size: 20,
                             ),
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                           ),
                         ),
                       ),
@@ -429,7 +469,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ],
                       ),
                       const SizedBox(height: 18),
-                      _buildSignInButton(loading),
+                      _GoldButton(
+                        loading: loading,
+                        onPressed: _submit,
+                      ),
                     ],
                   ),
                 ),
@@ -449,7 +492,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(
-        color: Colors.white.withValues(alpha: 0.18),
+        color: _gold.withValues(alpha: 0.4),
         width: 1,
       ),
     );
@@ -458,7 +501,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       prefixIcon: Icon(icon, color: _gold, size: 20),
       suffixIcon: suffix,
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: Colors.white.withValues(alpha: 0.05),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       labelStyle: TextStyle(
         color: Colors.white.withValues(alpha: 0.65),
@@ -474,8 +517,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide(
-          color: _gold.withValues(alpha: 0.85),
-          width: 1.4,
+          color: _gold.withValues(alpha: 0.95),
+          width: 1.6,
         ),
       ),
       errorBorder: OutlineInputBorder(
@@ -484,61 +527,467 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: AppColors.premiumRedLight, width: 1.4),
+        borderSide:
+            const BorderSide(color: AppColors.premiumRedLight, width: 1.4),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------- widgets --
+
+/// Repeating floating gold particles drifting upward.
+class _GoldParticles extends StatefulWidget {
+  const _GoldParticles();
+
+  @override
+  State<_GoldParticles> createState() => _GoldParticlesState();
+}
+
+class _GoldParticlesState extends State<_GoldParticles>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 9),
+  )..repeat();
+
+  static const _count = 16;
+  late final List<_Particle> _particles = List.generate(_count, (i) {
+    final r = Random();
+    return _Particle(
+      x: r.nextDouble(),
+      startY: r.nextDouble(),
+      size: 2 + r.nextDouble() * 4,
+      speed: 0.3 + r.nextDouble() * 0.7,
+      opacity: 0.25 + r.nextDouble() * 0.45,
+      sway: r.nextDouble() * 20,
+      phase: r.nextDouble() * 2 * pi,
+    );
+  });
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          final h = constraints.maxHeight;
+          return AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final t = _c.value;
+              return Stack(
+                children: [
+                  for (final p in _particles)
+                    Positioned(
+                      left: p.x * w + sin(2 * pi * t + p.phase) * p.sway,
+                      top: ((p.startY - p.speed * t) % 1.0) * h,
+                      child: Opacity(
+                        opacity: p.opacity * _edgeFade(p, t),
+                        child: Container(
+                          width: p.size,
+                          height: p.size,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD4AF37),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFD4AF37)
+                                    .withValues(alpha: 0.6),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSignInButton(bool loading) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_goldLight, _gold, _goldDark],
+  double _edgeFade(_Particle p, double t) {
+    final y = (p.startY - p.speed * t) % 1.0;
+    final mid = 1 - (y - 0.5).abs() * 2;
+    return mid.clamp(0.0, 1.0);
+  }
+}
+
+class _Particle {
+  const _Particle({
+    required this.x,
+    required this.startY,
+    required this.size,
+    required this.speed,
+    required this.opacity,
+    required this.sway,
+    required this.phase,
+  });
+
+  final double x;
+  final double startY;
+  final double size;
+  final double speed;
+  final double opacity;
+  final double sway;
+  final double phase;
+}
+
+/// Elegant curved golden divider between the hero and login sections.
+class _CurvedDivider extends StatelessWidget {
+  const _CurvedDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(double.infinity, 28),
+      painter: const _CurvedDividerPainter(),
+    );
+  }
+}
+
+class _CurvedDividerPainter extends CustomPainter {
+  const _CurvedDividerPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final center = Offset(w / 2, size.height / 2);
+
+    final path = Path()
+      ..moveTo(0, center.dy + 4)
+      ..quadraticBezierTo(center.dx, center.dy - 7, w, center.dy + 4);
+
+    final glow = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round
+      ..color = const Color(0xFFD4AF37).withValues(alpha: 0.22)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    final line = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round
+      ..shader = const LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [Color(0x00D4AF37), Color(0xFFD4AF37), Color(0xFFF7D488), Color(0xFFD4AF37), Color(0x00D4AF37)],
+        stops: [0, 0.2, 0.5, 0.8, 1],
+      ).createShader(Offset.zero & size);
+
+    canvas.drawPath(path, glow);
+    canvas.drawPath(path, line);
+
+    final diamond = Path()
+      ..moveTo(center.dx, center.dy - 2)
+      ..lineTo(center.dx + 5, center.dy + 3)
+      ..lineTo(center.dx, center.dy + 8)
+      ..lineTo(center.dx - 5, center.dy + 3)
+      ..close();
+    canvas.drawPath(diamond, Paint()..color = const Color(0xFFD4AF37));
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Large gold-gradient Sign In button with pulsing glow + press animation.
+class _GoldButton extends StatefulWidget {
+  const _GoldButton({required this.loading, required this.onPressed});
+
+  final bool loading;
+  final VoidCallback? onPressed;
+
+  @override
+  State<_GoldButton> createState() => _GoldButtonState();
+}
+
+class _GoldButtonState extends State<_GoldButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _glow = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat(reverse: true);
+
+  bool _pressed = false;
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.loading ? null : widget.onPressed,
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1,
+        duration: const Duration(milliseconds: 120),
+        child: AnimatedBuilder(
+          animation: _glow,
+          builder: (context, _) => Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF7D488), Color(0xFFD4AF37), Color(0xFFB8860B)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37)
+                      .withValues(alpha: 0.28 + 0.32 * _glow.value),
+                  blurRadius: 30,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                alignment: Alignment.center,
+                child: widget.loading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Colors.black87,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.login, size: 20, color: Colors.black87),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Sign In',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: _gold.withValues(alpha: loading ? 0.12 : 0.5),
-            blurRadius: 26,
-            spreadRadius: 1,
-            offset: const Offset(0, 10),
+      ),
+    );
+  }
+}
+
+/// Features glass card: gold circular icons + 3 brand promises.
+class _FeaturesCard extends StatelessWidget {
+  const _FeaturesCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _GlassCard(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _FeatureItem(Icons.workspace_premium_outlined, 'Trusted Quality'),
+          _FeatureItem(Icons.support_agent_outlined, 'Best Service'),
+          _FeatureItem(Icons.handshake_outlined, 'Your Partner In Every Step'),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureItem extends StatelessWidget {
+  const _FeatureItem(this.icon, this.label);
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Flexible(
+      child: Column(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.7),
+                width: 1.2,
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFFD4AF37).withValues(alpha: 0.18),
+                  const Color(0xFFB8860B).withValues(alpha: 0.06),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
+                  blurRadius: 12,
+                ),
+              ],
+            ),
+            child: Icon(icon, color: const Color(0xFFD4AF37), size: 22),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.78),
+            ),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: loading ? null : _submit,
+    );
+  }
+}
+
+/// Demo accounts glass card.
+class _DemoCard extends StatelessWidget {
+  const _DemoCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.person_outline, color: Color(0xFFD4AF37), size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Demo Accounts',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: Color(0xFFF7D488),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          _DemoRow('Admin', 'admin@muallimcarpets.com', 'Admin@123'),
+          SizedBox(height: 8),
+          _DemoRow('Managers', 'israr@ · farooq@ · dostmuhammad@muallimcarpets.com', 'Manager@123'),
+        ],
+      ),
+    );
+  }
+}
+
+class _DemoRow extends StatelessWidget {
+  const _DemoRow(this.role, this.email, this.password);
+
+  final String role;
+  final String email;
+  final String password;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 78,
+          child: Text(
+            role,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFFD4AF37),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                email,
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.72),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Password: $password',
+                style: GoogleFonts.poppins(
+                  fontSize: 10.5,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Reusable frosted glass card used by the features + demo sections.
+class _GlassCard extends StatelessWidget {
+  const _GlassCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 26,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            alignment: Alignment.center,
-            child: loading
-                ? const SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      color: Colors.black87,
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.login, size: 20, color: Colors.black87),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Sign In',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              color: const Color(0x59000000), // rgba(0,0,0,0.35)
+              border: Border.all(
+                color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: child,
           ),
         ),
       ),
@@ -567,16 +1016,13 @@ class _ShopDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(16),
-      borderSide: BorderSide(
-        color: Colors.white.withValues(alpha: 0.18),
-        width: 1,
-      ),
+      borderSide: BorderSide(color: _gold.withValues(alpha: 0.4), width: 1),
     );
     final decoration = InputDecoration(
       labelText: 'Branch',
       prefixIcon: const Icon(Icons.store_outlined, color: _gold, size: 20),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: Colors.white.withValues(alpha: 0.05),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.65)),
       floatingLabelStyle: const TextStyle(color: _gold, fontWeight: FontWeight.w600),
@@ -584,7 +1030,7 @@ class _ShopDropdown extends StatelessWidget {
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: _gold.withValues(alpha: 0.85), width: 1.4),
+        borderSide: BorderSide(color: _gold.withValues(alpha: 0.95), width: 1.6),
       ),
     );
 
@@ -684,48 +1130,3 @@ class _RememberMe extends StatelessWidget {
     );
   }
 }
-
-class _TrustRow extends StatelessWidget {
-  const _TrustRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: const [
-        _TrustItem(Icons.verified_outlined, 'Trusted Quality'),
-        _TrustItem(Icons.support_agent_outlined, 'Best Service'),
-        _TrustItem(Icons.sentiment_satisfied_alt_outlined, 'Customer Satisfaction'),
-      ],
-    );
-  }
-}
-
-class _TrustItem extends StatelessWidget {
-  const _TrustItem(this.icon, this.label);
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Flexible(
-      child: Column(
-        children: [
-          Icon(icon, color: const Color(0xFFD4AF37), size: 20),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
