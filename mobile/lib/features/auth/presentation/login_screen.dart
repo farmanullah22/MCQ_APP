@@ -155,6 +155,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Scaffold(
       body: PremiumBackground(
         isDark: isDark,
+        watermarkSize: 360,
+        watermarkOpacity: 0.05,
+        watermarkAlignment: Alignment.center,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -238,7 +241,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Demo accounts — Admin: admin@muallimcarpets.com\nManagers: ali@ / omar@ / bilal@muallimcarpets.com\nPassword: Admin@123 / Manager@123',
+                    'Demo accounts — Admin: admin@muallimcarpets.com\nManagers: israr@ / farooq@ / dostmuhammad@muallimcarpets.com\nPassword: Admin@123 / Manager@123',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                   ),

@@ -22,15 +22,15 @@ const CATEGORIES = [
 ];
 
 const SHOPS = [
-  { name: 'Shop 1', address: 'Main Bazaar, Peshawar', contactNumber: '+92 300 1111111' },
-  { name: 'Shop 2', address: 'Kababian Street, Peshawar', contactNumber: '+92 300 2222222' },
-  { name: 'Shop 3', address: 'Mall Road, Lahore', contactNumber: '+92 300 3333333' },
+  { name: 'Branch 1', address: 'Main Bazaar, Peshawar', contactNumber: '+92 300 1111111' },
+  { name: 'Branch 2', address: 'Kababian Street, Peshawar', contactNumber: '+92 300 2222222' },
+  { name: 'Warehouse', address: 'Mall Road, Lahore', contactNumber: '+92 300 3333333' },
 ];
 
 const MANAGERS = [
-  { name: 'Ali Khan', email: 'ali@muallimcarpets.com', phone: '+92 300 1112222' },
-  { name: 'Omar Sheikh', email: 'omar@muallimcarpets.com', phone: '+92 300 2223333' },
-  { name: 'Bilal Ahmed', email: 'bilal@muallimcarpets.com', phone: '+92 300 3334444' },
+  { name: 'Israr', email: 'israr@muallimcarpets.com', phone: '+92 300 1112222' },
+  { name: 'Farooq', email: 'farooq@muallimcarpets.com', phone: '+92 300 2223333' },
+  { name: 'Dost Muhammad', email: 'dostmuhammad@muallimcarpets.com', phone: '+92 300 3334444' },
 ];
 
 const PRODUCT_TEMPLATES = [

@@ -35,12 +35,31 @@ class PremiumBackground extends StatelessWidget {
     required this.child,
     this.watermarkSize = 320,
     this.watermarkOpacity = 0.025,
+    this.watermarkAlignment,
   });
 
   final bool isDark;
   final Widget child;
   final double watermarkSize;
   final double watermarkOpacity;
+
+  /// When set, the faded logo is aligned inside the screen (e.g. behind a form)
+  /// instead of bleeding off the top-right corner.
+  final Alignment? watermarkAlignment;
+
+  Widget _watermark() {
+    return IgnorePointer(
+      child: Opacity(
+        opacity: watermarkOpacity,
+        child: Image.asset(
+          'lib/images/logo.png',
+          width: watermarkSize,
+          height: watermarkSize,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,21 +71,14 @@ class PremiumBackground extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           CarpetPattern(opacity: isDark ? 0.05 : 0.04),
-          Positioned(
-            top: -watermarkSize * 0.25,
-            right: -watermarkSize * 0.35,
-            child: IgnorePointer(
-              child: Opacity(
-                opacity: watermarkOpacity,
-                child: Image.asset(
-                  'lib/images/logo.png',
-                  width: watermarkSize,
-                  height: watermarkSize,
-                  fit: BoxFit.contain,
-                ),
-              ),
+          if (watermarkAlignment != null)
+            Align(alignment: watermarkAlignment!, child: _watermark())
+          else
+            Positioned(
+              top: -watermarkSize * 0.25,
+              right: -watermarkSize * 0.35,
+              child: _watermark(),
             ),
-          ),
           child,
         ],
       ),

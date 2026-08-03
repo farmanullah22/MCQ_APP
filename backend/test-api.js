@@ -41,7 +41,7 @@ async function main() {
       console.log('report:', r.status, JSON.stringify({ sales: r.data.data.sales, profit: r.data.data.profit }));
 
       // Manager login - should be scoped
-      const ml = await req('POST', '/auth/login', { email: 'ali@muallimcarpets.com', password: 'Manager@123' }, false);
+      const ml = await req('POST', '/auth/login', { email: 'israr@muallimcarpets.com', password: 'Manager@123' }, false);
       token = ml.data.data.token;
       console.log('manager login:', ml.status, 'assignedShop=', ml.data.data.user.assignedShop?.name);
 

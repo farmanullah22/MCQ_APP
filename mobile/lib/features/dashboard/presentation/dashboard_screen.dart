@@ -122,7 +122,7 @@ class DashboardScreen extends ConsumerWidget {
                             (e) => Padding(
                               padding: const EdgeInsets.only(bottom: 14),
                               child: ShopCard(
-                                name: e.$2.shopName ?? 'Shop ${e.$1 + 1}',
+                                name: e.$2.shopName ?? 'Branch ${e.$1 + 1}',
                                 manager: e.$2.manager,
                                 revenue: e.$2.sales,
                                 profit: e.$2.profit,
