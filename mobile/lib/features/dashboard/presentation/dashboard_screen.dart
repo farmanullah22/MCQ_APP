@@ -197,7 +197,7 @@ class _DashboardBackground extends StatelessWidget {
           ),
         ),
         Opacity(
-          opacity: 0.10,
+          opacity: 0.16,
           child: Image.asset(
             'lib/images/admin_dashboard.jfif',
             fit: BoxFit.cover,
@@ -205,7 +205,7 @@ class _DashboardBackground extends StatelessWidget {
         ),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.85),
+            color: Colors.black.withValues(alpha: 0.70),
           ),
         ),
         Positioned(
@@ -273,7 +273,7 @@ class _LuxHeader extends ConsumerWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
-                'lib/images/logo.png',
+                'lib/images/muallimlogo.png',
                 width: 42,
                 height: 42,
                 fit: BoxFit.contain,

@@ -10,7 +10,6 @@ import '../../../core/widgets/status_views.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../models/sale.dart';
 import '../providers/sale_providers.dart';
-import 'sale_form_screen.dart';
 
 class SalesListScreen extends ConsumerWidget {
   const SalesListScreen({super.key});
@@ -34,13 +33,6 @@ class SalesListScreen extends ConsumerWidget {
             tooltip: 'Refresh',
             onPressed: () => ref.read(saleListControllerProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            tooltip: 'New Sale',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SaleFormScreen()),
-            ),
-            icon: const Icon(Icons.add),
           ),
         ],
       ),

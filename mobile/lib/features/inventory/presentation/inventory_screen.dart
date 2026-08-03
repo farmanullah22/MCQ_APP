@@ -50,29 +50,14 @@ class InventoryScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'stockOut',
-            tooltip: 'Stock Out',
-            backgroundColor: AppColors.danger,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const StockOutScreen()),
-            ),
-            child: const Icon(Icons.arrow_upward),
-          ),
-          const SizedBox(height: 10),
-          FloatingActionButton(
-            heroTag: 'stockIn',
-            tooltip: 'Stock In',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const StockInScreen()),
-            ),
-            child: const Icon(Icons.add),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.small(
+        heroTag: 'stockOut',
+        tooltip: 'Stock Out',
+        backgroundColor: AppColors.danger,
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const StockOutScreen()),
+        ),
+        child: const Icon(Icons.arrow_upward),
       ),
       body: state.data.when(
         loading: () => const LoadingView(),
