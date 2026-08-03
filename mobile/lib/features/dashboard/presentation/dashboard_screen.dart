@@ -113,13 +113,15 @@ class DashboardScreen extends ConsumerWidget {
                           );
                         },
                       ),
-                    const SizedBox(height: 28),
-                    const _SectionTitle(
-                      title: 'Quick Actions',
-                      subtitle: 'Frequent tasks at your fingertips',
-                    ),
-                    const SizedBox(height: 12),
-                    _QuickActions(),
+                    if (!isAdmin) ...[
+                      const SizedBox(height: 28),
+                      const _SectionTitle(
+                        title: 'Quick Actions',
+                        subtitle: 'Frequent tasks at your fingertips',
+                      ),
+                      const SizedBox(height: 12),
+                      _QuickActions(),
+                    ],
                     const SizedBox(height: 28),
                     const _SectionTitle(
                       title: 'Analytics',
