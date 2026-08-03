@@ -10,7 +10,6 @@ import '../../../core/providers/repository_providers.dart';
 import '../../../core/services/fcm_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
-import '../../../core/widgets/app_logo.dart';
 import '../models/login_preview.dart';
 import '../providers/auth_providers.dart';
 
@@ -256,10 +255,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     children: [
                       FadeTransition(
                         opacity: _logoFade,
-                        child: AppLogo(
-                          size: 104,
-                          dark: true,
-                          imagePath: 'lib/images/logo2.jfif',
+                        child: Image.asset(
+                          'lib/images/muallimlogo.png',
+                          height: 210,
+                          fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -274,18 +273,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       FadeTransition(
                         opacity: _trustFade,
                         child: const _TrustRow(),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'Demo — Admin: admin@muallimcarpets.com\n'
-                        'Managers: israr@ / farooq@ / dostmuhammad@muallimcarpets.com\n'
-                        'Password: Admin@123 / Manager@123',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          height: 1.5,
-                          color: Colors.white.withValues(alpha: 0.38),
-                        ),
                       ),
                     ],
                   ),
@@ -379,7 +366,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         cursorColor: _gold,
                         validator: Validators.email,
                         decoration: _luxeDecoration(
-                          'Email',
+                          'Email / Phone Number',
                           Icons.mail_outline,
                         ),
                       ),
