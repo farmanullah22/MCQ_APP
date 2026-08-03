@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.size = 72, this.dark = false});
+  const AppLogo({
+    super.key,
+    this.size = 72,
+    this.dark = false,
+    this.imagePath = 'lib/images/logo.png',
+  });
 
   final double size;
   final bool dark;
+  final String imagePath;
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +22,7 @@ class AppLogo extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: Image.asset(
-            'lib/images/logo.png',
+            imagePath,
             width: size,
             height: size,
             fit: BoxFit.contain,
