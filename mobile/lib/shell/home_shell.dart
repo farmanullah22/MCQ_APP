@@ -197,17 +197,22 @@ class _PremiumBottomNav extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: isDark
-              ? AppColors.darkSurface.withValues(alpha: 0.72)
-              : Colors.white.withValues(alpha: 0.72),
+              ? Colors.black.withValues(alpha: 0.58)
+              : Colors.white.withValues(alpha: 0.6),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
-            color: AppColors.gold.withValues(alpha: isDark ? 0.35 : 0.30),
+            color: AppColors.gold.withValues(alpha: isDark ? 0.42 : 0.30),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.16),
-              blurRadius: 26,
-              offset: const Offset(0, 10),
+              color: Colors.black.withValues(alpha: isDark ? 0.7 : 0.18),
+              blurRadius: 34,
+              offset: const Offset(0, 14),
+            ),
+            BoxShadow(
+              color: AppColors.gold.withValues(alpha: isDark ? 0.14 : 0.0),
+              blurRadius: 22,
+              spreadRadius: -6,
             ),
           ],
         ),

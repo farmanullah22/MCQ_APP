@@ -68,9 +68,9 @@ class DashboardScreen extends ConsumerWidget {
                     _StatGrid(cards: data.cards),
                     const SizedBox(height: 28),
                     _SectionTitle(
-                      title: isAdmin ? 'Branches' : 'Your Branch',
+                      title: isAdmin ? 'Branch Overview' : 'Your Branch',
                       subtitle: isAdmin
-                          ? 'Muallim showroom network'
+                          ? 'Revenue, profit and sales across showrooms'
                           : 'Overview of your showroom',
                     ),
                     const SizedBox(height: 12),
@@ -194,6 +194,18 @@ class _DashboardBackground extends StatelessWidget {
             ),
           ),
         ),
+        Opacity(
+          opacity: 0.10,
+          child: Image.asset(
+            'lib/images/admin_dashboard.jfif',
+            fit: BoxFit.cover,
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.85),
+          ),
+        ),
         Positioned(
           top: -90,
           right: -90,
@@ -210,19 +222,6 @@ class _DashboardBackground extends StatelessWidget {
           child: _Glow(size: 300, color: const Color(0xFF3A2E10).withValues(alpha: 0.28)),
         ),
         const CarpetPattern(opacity: 0.05),
-        Positioned(
-          top: -140,
-          right: -170,
-          child: Opacity(
-            opacity: 0.03,
-            child: Image.asset(
-              'lib/images/logo.png',
-              width: 360,
-              height: 360,
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -527,6 +526,7 @@ class _RevenueCard extends StatelessWidget {
 
     return _GlassCard(
       padding: const EdgeInsets.all(20),
+      glow: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1677,10 +1677,15 @@ class _ActivityCard extends StatelessWidget {
 // ------------------------------------------------------------------ common --
 
 class _GlassCard extends StatelessWidget {
-  const _GlassCard({required this.child, this.padding = const EdgeInsets.all(16)});
+  const _GlassCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+    this.glow = false,
+  });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final bool glow;
 
   @override
   Widget build(BuildContext context) {
@@ -1689,28 +1694,28 @@ class _GlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.45),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 30,
+            offset: const Offset(0, 16),
           ),
           BoxShadow(
-            color: _gold.withValues(alpha: 0.08),
-            blurRadius: 24,
-            spreadRadius: -8,
+            color: _gold.withValues(alpha: glow ? 0.22 : 0.10),
+            blurRadius: glow ? 34 : 24,
+            spreadRadius: glow ? -4 : -8,
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0x66000000),
+              color: const Color(0x1FFFFFFF),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: _gold.withValues(alpha: 0.32),
-                width: 1,
+                color: _gold.withValues(alpha: glow ? 0.5 : 0.34),
+                width: glow ? 1.2 : 1,
               ),
             ),
             padding: padding,
