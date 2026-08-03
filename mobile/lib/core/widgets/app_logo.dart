@@ -13,11 +13,14 @@ class AppLogo extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Image.asset(
-          'lib/images/logo.png',
-          width: size,
-          height: size,
-          fit: BoxFit.contain,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.asset(
+            'lib/images/logo.png',
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+          ),
         ),
         SizedBox(height: size * 0.18),
         Text(

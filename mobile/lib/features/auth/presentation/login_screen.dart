@@ -162,7 +162,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AppLogo(size: 76, dark: isDark),
+                  AppLogo(size: 120, dark: isDark),
                   const SizedBox(height: 40),
                   Text(
                     'Welcome back',
