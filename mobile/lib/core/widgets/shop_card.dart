@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../utils/formatters.dart';
+import 'carpet_pattern.dart';
+import 'logo_watermark.dart';
 
 class ShopCard extends StatelessWidget {
   const ShopCard({
@@ -30,7 +32,6 @@ class ShopCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = gradient?.colors ?? AppColors.emeraldGradient.colors;
-    final brand = colors.first;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: colors),
@@ -61,8 +62,17 @@ class ShopCard extends StatelessWidget {
                 child: Container(
                   width: 96,
                   height: 96,
-                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.08), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.10), shape: BoxShape.circle),
                 ),
+              ),
+              Positioned.fill(
+                child: CarpetPattern(opacity: 0.06, color: Colors.white),
+              ),
+              LogoWatermark(
+                size: 150,
+                opacity: 0.09,
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.only(right: 6, bottom: 6),
               ),
               Padding(
                 padding: const EdgeInsets.all(16),
@@ -144,26 +154,30 @@ class ShopCard extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: Material(
-                        color: Colors.white,
+                        color: Colors.transparent,
                         borderRadius: BorderRadius.circular(12),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
                           onTap: onOpen,
-                          child: Padding(
+                          child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 9),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.goldGradient,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
                                   'Open Shop',
                                   style: TextStyle(
-                                    color: brand,
+                                    color: AppColors.deepBlack,
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                Icon(Icons.arrow_forward_rounded, size: 15, color: brand),
+                                const Icon(Icons.arrow_forward_rounded, size: 15, color: AppColors.deepBlack),
                               ],
                             ),
                           ),

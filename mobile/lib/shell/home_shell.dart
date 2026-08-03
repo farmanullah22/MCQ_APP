@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:ui';
 
 import '../core/theme/app_colors.dart';
 import '../features/analytics/presentation/analytics_screen.dart';
@@ -195,30 +196,40 @@ class _PremiumBottomNav extends StatelessWidget {
         height: 68,
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: isDark ? AppColors.darkSurface : Colors.white,
+          color: isDark
+              ? AppColors.darkSurface.withValues(alpha: 0.72)
+              : Colors.white.withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.border),
+          border: Border.all(
+            color: AppColors.gold.withValues(alpha: isDark ? 0.35 : 0.30),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.14),
+              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.16),
               blurRadius: 26,
               offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Row(
-          children: List.generate(routes.length, (i) {
-            final (icon, selectedIcon, label) = _meta(routes[i]);
-            return Expanded(
-              child: _NavItem(
-                icon: icon,
-                selectedIcon: selectedIcon,
-                label: label,
-                selected: i == currentIndex,
-                onTap: () => onTap(i),
-              ),
-            );
-          }),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Row(
+              children: List.generate(routes.length, (i) {
+                final (icon, selectedIcon, label) = _meta(routes[i]);
+                return Expanded(
+                  child: _NavItem(
+                    icon: icon,
+                    selectedIcon: selectedIcon,
+                    label: label,
+                    selected: i == currentIndex,
+                    onTap: () => onTap(i),
+                  ),
+                );
+              }),
+            ),
+          ),
         ),
       ),
     );
@@ -259,12 +270,12 @@ class _NavItem extends StatelessWidget {
               width: selected ? 48 : 42,
               height: selected ? 34 : 30,
               decoration: BoxDecoration(
-                gradient: selected ? AppColors.emeraldGradient : null,
+                gradient: selected ? AppColors.goldGradient : null,
                 borderRadius: BorderRadius.circular(18),
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.38),
+                          color: AppColors.gold.withValues(alpha: 0.45),
                           blurRadius: 12,
                           offset: const Offset(0, 5),
                         ),
@@ -277,7 +288,7 @@ class _NavItem extends StatelessWidget {
                   selected ? selectedIcon : icon,
                   key: ValueKey(selected),
                   size: 21,
-                  color: selected ? Colors.white : idleColor,
+                  color: selected ? AppColors.deepBlack : idleColor,
                 ),
               ),
             ),
@@ -288,7 +299,7 @@ class _NavItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              color: selected ? AppColors.primary : idleColor,
+              color: selected ? AppColors.gold : idleColor,
             ),
             child: Text(label),
           ),

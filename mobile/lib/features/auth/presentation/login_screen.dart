@@ -8,6 +8,7 @@ import '../../../core/services/fcm_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/app_logo.dart';
+import '../../../core/widgets/carpet_pattern.dart';
 import '../../../core/widgets/status_views.dart';
 import '../models/login_preview.dart';
 import '../providers/auth_providers.dart';
@@ -152,17 +153,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final showShop = _previewLoading || isManager;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppLogo(size: 120, dark: isDark),
+      body: PremiumBackground(
+        isDark: isDark,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppLogo(size: 120, dark: isDark),
                   const SizedBox(height: 40),
                   Text(
                     'Welcome back',
@@ -244,6 +247,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

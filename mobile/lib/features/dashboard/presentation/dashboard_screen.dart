@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/activity_timeline.dart';
 import '../../../core/widgets/app_bar_brand.dart';
+import '../../../core/widgets/carpet_pattern.dart';
 import '../../../core/widgets/dashboard_hero_slider.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/shop_card.dart';
@@ -65,28 +66,9 @@ class DashboardScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: isDark ? AppGradients.bgDark : AppGradients.bg,
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -40,
-              right: -60,
-              child: IgnorePointer(
-                child: Opacity(
-                  opacity: isDark ? 0.07 : 0.06,
-                  child: Image.asset(
-                    'lib/images/logo.png',
-                    width: 260,
-                    height: 260,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-            ),
-            state.data.when(
+      body: PremiumBackground(
+        isDark: isDark,
+        child: state.data.when(
               loading: () => const LoadingView(),
               error: (e, st) => ErrorView(
                 message: e.toString(),
@@ -173,9 +155,7 @@ class DashboardScreen extends ConsumerWidget {
                 );
               },
             ),
-          ],
         ),
-      ),
     );
   }
 

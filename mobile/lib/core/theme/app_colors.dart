@@ -1,87 +1,99 @@
 import 'package:flutter/material.dart';
 
-/// Muallim Carpets brand palette - luxury emerald + gold + royal blue.
+/// Muallim Carpet & Qaleen brand palette.
+/// Luxury Gold (#D4AF37) · Deep Black (#121212) · Premium Red (#8B1E1E) · Cream (#F8F6F1)
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF0F766E); // Deep emerald
-  static const Color primaryLight = Color(0xFF14B8A6);
-  static const Color primaryDark = Color(0xFF0B5D57);
-  static const Color accent = Color(0xFFD4A017); // Gold
-  static const Color accentLight = Color(0xFFE8C766);
-  static const Color secondary = Color(0xFF2563EB); // Royal blue
-  static const Color secondaryLight = Color(0xFF60A5FA);
-  static const Color success = Color(0xFF16A34A);
-  static const Color successLight = Color(0xFF4ADE80);
-  static const Color danger = Color(0xFFDC2626);
-  static const Color dangerLight = Color(0xFFF87171);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color warningLight = Color(0xFFFBBF24);
-  static const Color info = Color(0xFF0EA5E9);
-  static const Color infoLight = Color(0xFF38BDF8);
-  static const Color violet = Color(0xFF8B5CF6);
-  static const Color pink = Color(0xFFEC4899);
+  // ---- Brand anchors -------------------------------------------------------
+  static const Color gold = Color(0xFFD4AF37);
+  static const Color goldLight = Color(0xFFE9CE7A);
+  static const Color goldDark = Color(0xFFB8912A);
+  static const Color deepBlack = Color(0xFF121212);
+  static const Color premiumRed = Color(0xFF8B1E1E);
+  static const Color premiumRedLight = Color(0xFFA83636);
+  static const Color cream = Color(0xFFF8F6F1);
+  static const Color creamLight = Color(0xFFFFFDF8);
+
+  // ---- Semantic aliases ----------------------------------------------------
+  static const Color primary = Color(0xFF1C1C1C); // Near-black (buttons, seed)
+  static const Color primaryLight = Color(0xFF3A3A3A);
+  static const Color primaryDark = Color(0xFF0E0E0E);
+  static const Color accent = Color(0xFFD4AF37); // Gold
+  static const Color accentLight = Color(0xFFE9CE7A);
+  static const Color secondary = Color(0xFFD4AF37); // Gold accents
+  static const Color secondaryLight = Color(0xFFE9CE7A);
+  static const Color success = Color(0xFF3E8E5A);
+  static const Color successLight = Color(0xFF6FBE8C);
+  static const Color danger = Color(0xFF8B1E1E); // Premium red
+  static const Color dangerLight = Color(0xFFB04A4A);
+  static const Color warning = Color(0xFFC9971F); // Gold-amber
+  static const Color warningLight = Color(0xFFE0B84F);
+  static const Color info = Color(0xFFB8860B); // Bronze
+  static const Color infoLight = Color(0xFFD4AF37);
+  static const Color violet = Color(0xFF6D5AA8);
+  static const Color pink = Color(0xFFC2507A);
 
   /// Common soft gradient pairs used for gradient cards.
   static const LinearGradient emeraldGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+    colors: [Color(0xFF1C1C1C), Color(0xFF3B3330)],
   );
   static const LinearGradient goldGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFD4A017), Color(0xFFE8C766)],
+    colors: [Color(0xFFD4AF37), Color(0xFFE9CE7A)],
   );
   static const LinearGradient royalGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF2563EB), Color(0xFF60A5FA)],
+    colors: [Color(0xFF8B1E1E), Color(0xFFA83636)],
   );
   static const LinearGradient dangerGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFDC2626), Color(0xFFF87171)],
+    colors: [Color(0xFF8B1E1E), Color(0xFFB04A4A)],
   );
   static const LinearGradient warningGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFF59E0B), Color(0xFFFBBF24)],
+    colors: [Color(0xFFC9971F), Color(0xFFE0B84F)],
   );
   static const LinearGradient violetGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFFC084FC)],
+    colors: [Color(0xFF6D5AA8), Color(0xFF8A77C4)],
   );
   static const LinearGradient pinkGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFEC4899), Color(0xFFF472B6)],
+    colors: [Color(0xFFC2507A), Color(0xFFD68AA8)],
   );
   static const LinearGradient infoGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF0EA5E9), Color(0xFF38BDF8)],
+    colors: [Color(0xFFB8860B), Color(0xFFD4AF37)],
   );
 
-  // Light
-  static const Color background = Color(0xFFF5F7F6);
-  static const Color backgroundTop = Color(0xFFEAF3F1);
-  static const Color surface = Colors.white;
-  static const Color surfaceHigh = Color(0xFFEFF6F4);
-  static const Color border = Color(0xFFE2EAE7);
-  static const Color borderStrong = Color(0xFFCBDAD5);
+  // Light (cream / off-white)
+  static const Color background = Color(0xFFF8F6F1);
+  static const Color backgroundTop = Color(0xFFF1ECE1);
+  static const Color surface = Color(0xFFFFFDF8);
+  static const Color surfaceHigh = Color(0xFFF2EDE2);
+  static const Color border = Color(0xFFE7E0D0);
+  static const Color borderStrong = Color(0xFFD5CBB5);
 
-  // Dark (deep black with emerald undertone)
-  static const Color darkBackground = Color(0xFF0B1211);
-  static const Color darkBackgroundTop = Color(0xFF0E1B19);
-  static const Color darkSurface = Color(0xFF121C1A);
-  static const Color darkSurfaceHigh = Color(0xFF1B2926);
-  static const Color darkBorder = Color(0xFF233331);
-  static const Color darkBorderStrong = Color(0xFF324944);
+  // Dark (deep black with warm undertone)
+  static const Color darkBackground = Color(0xFF121212);
+  static const Color darkBackgroundTop = Color(0xFF1A1815);
+  static const Color darkSurface = Color(0xFF1C1B19);
+  static const Color darkSurfaceHigh = Color(0xFF282520);
+  static const Color darkBorder = Color(0xFF2E2B25);
+  static const Color darkBorderStrong = Color(0xFF3E3A31);
 
-  static const Color textPrimary = Color(0xFF14201E);
-  static const Color textSecondary = Color(0xFF66746F);
-  static const Color darkTextPrimary = Color(0xFFF0F6F4);
-  static const Color darkTextSecondary = Color(0xFFA7B8B3);
+  static const Color textPrimary = Color(0xFF1C1A16);
+  static const Color textSecondary = Color(0xFF6F675A);
+  static const Color darkTextPrimary = Color(0xFFF5EFE2);
+  static const Color darkTextSecondary = Color(0xFFABA394);
 }

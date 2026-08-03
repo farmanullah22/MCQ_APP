@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'logo_watermark.dart';
 
 class HeroSlide {
   final String title;
@@ -147,7 +150,26 @@ class _SlideCard extends StatelessWidget {
           Positioned(
             left: -20,
             bottom: -26,
-            child: _GlowCircle(radius: 64, color: Colors.black.withValues(alpha: 0.08)),
+            child: _GlowCircle(radius: 64, color: Colors.black.withValues(alpha: 0.10)),
+          ),
+          LogoWatermark(
+            size: 170,
+            opacity: 0.09,
+            alignment: Alignment.bottomRight,
+            padding: const EdgeInsets.only(right: 8, bottom: 4),
+          ),
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: _MiniSparkline(color: Colors.white, width: 86, height: 40),
+          ),
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -266,24 +288,95 @@ class _GlowCircle extends StatelessWidget {
   }
 }
 
+/// Animated decorative line chart used inside premium hero slides.
+class _MiniSparkline extends StatelessWidget {
+  const _MiniSparkline({required this.color, required this.width, required this.height});
+
+  final Color color;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 1400),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, _) => CustomPaint(
+        size: Size(width, height),
+        painter: _SparklinePainter(color: color, progress: t),
+      ),
+    );
+  }
+}
+
+class _SparklinePainter extends CustomPainter {
+  _SparklinePainter({required this.color, required this.progress});
+
+  final Color color;
+  final double progress;
+
+  static const _values = [0.38, 0.55, 0.46, 0.68, 0.58, 0.82, 0.72, 0.94, 0.85, 1.0];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress <= 0) return;
+
+    final stroke = Paint()
+      ..color = color.withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final fill = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [color.withValues(alpha: 0.28), color.withValues(alpha: 0.0)],
+      ).createShader(Offset.zero & size);
+
+    final step = size.width / (_values.length - 1);
+    final count = math.max(2, (progress * _values.length).round());
+
+    final path = Path();
+    for (var i = 0; i < count; i++) {
+      final dx = i * step;
+      final dy = size.height * (1 - _values[i] * 0.72 - 0.06);
+      i == 0 ? path.moveTo(dx, dy) : path.lineTo(dx, dy);
+    }
+
+    final area = Path.from(path)
+      ..lineTo((count - 1) * step, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(area, fill);
+    canvas.drawPath(path, stroke);
+  }
+
+  @override
+  bool shouldRepaint(_SparklinePainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
+}
+
 /// Shared gradients + reusable pieces for the premium dashboard.
 class AppGradients {
   AppGradients._();
 
   static const LinearGradient primary = LinearGradient(
-    colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+    colors: [Color(0xFFD4AF37), Color(0xFFE9CE7A)],
   );
   static const LinearGradient dot = LinearGradient(
-    colors: [Color(0xFFCBDAD5), Color(0xFFCBDAD5)],
+    colors: [Color(0xFFD8CEB8), Color(0xFFD8CEB8)],
   );
   static const LinearGradient bg = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFFEAF3F1), Color(0xFFF5F7F6)],
+    colors: [Color(0xFFF1ECE1), Color(0xFFF8F6F1)],
   );
   static const LinearGradient bgDark = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Color(0xFF0E1B19), Color(0xFF0B1211)],
+    colors: [Color(0xFF1A1815), Color(0xFF121212)],
   );
 }
