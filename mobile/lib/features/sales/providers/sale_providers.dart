@@ -18,13 +18,13 @@ class SaleListState {
 class SaleListController extends Notifier<SaleListState> {
   @override
   SaleListState build() {
-    _load();
+    Future.microtask(() {
+      if (ref.mounted) _load(state.from, state.to);
+    });
     return const SaleListState();
   }
 
-  Future<void> _load() async {
-    final from = state.from;
-    final to = state.to;
+  Future<void> _load(DateTime? from, DateTime? to) async {
     try {
       final page = await ref.read(saleRepositoryProvider).getSales(from: from, to: to);
       state = SaleListState(data: AsyncValue.data(page), from: from, to: to);
@@ -33,11 +33,15 @@ class SaleListController extends Notifier<SaleListState> {
     }
   }
 
-  Future<void> refresh() => _load();
+  Future<void> refresh() async {
+    final from = state.from;
+    final to = state.to;
+    await _load(from, to);
+  }
 
   Future<void> setDateRange(DateTime? from, DateTime? to) {
     state = SaleListState(from: from, to: to);
-    return _load();
+    return _load(from, to);
   }
 }
 
