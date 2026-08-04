@@ -9,8 +9,10 @@ import '../models/sale.dart';
 
 class SaleListState {
   final AsyncValue<SalePage> data;
+  final DateTime? from;
+  final DateTime? to;
 
-  const SaleListState({this.data = const AsyncValue.loading()});
+  const SaleListState({this.data = const AsyncValue.loading(), this.from, this.to});
 }
 
 class SaleListController extends Notifier<SaleListState> {
@@ -21,15 +23,22 @@ class SaleListController extends Notifier<SaleListState> {
   }
 
   Future<void> _load() async {
+    final from = state.from;
+    final to = state.to;
     try {
-      final page = await ref.read(saleRepositoryProvider).getSales();
-      state = SaleListState(data: AsyncValue.data(page));
+      final page = await ref.read(saleRepositoryProvider).getSales(from: from, to: to);
+      state = SaleListState(data: AsyncValue.data(page), from: from, to: to);
     } catch (e, st) {
-      state = SaleListState(data: AsyncValue.error(e, st));
+      state = SaleListState(data: AsyncValue.error(e, st), from: from, to: to);
     }
   }
 
   Future<void> refresh() => _load();
+
+  Future<void> setDateRange(DateTime? from, DateTime? to) {
+    state = SaleListState(from: from, to: to);
+    return _load();
+  }
 }
 
 final saleListControllerProvider =

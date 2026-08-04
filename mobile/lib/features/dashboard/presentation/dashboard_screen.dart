@@ -122,17 +122,19 @@ class DashboardScreen extends ConsumerWidget {
                       const SizedBox(height: 12),
                       _QuickActions(),
                     ],
-                    const SizedBox(height: 28),
-                    const _SectionTitle(
-                      title: 'Analytics',
-                      subtitle: 'Track performance over time',
-                    ),
-                    const SizedBox(height: 12),
-                    _WeeklySalesCard(data: data.weekly),
-                    const SizedBox(height: 14),
-                    _MonthlyProfitCard(data: data.monthly),
-                    const SizedBox(height: 14),
-                    _TopProductsCard(items: data.topProducts),
+                    if (!isAdmin) ...[
+                      const SizedBox(height: 28),
+                      const _SectionTitle(
+                        title: 'Analytics',
+                        subtitle: 'Track performance over time',
+                      ),
+                      const SizedBox(height: 12),
+                      _WeeklySalesCard(data: data.weekly),
+                      const SizedBox(height: 14),
+                      _MonthlyProfitCard(data: data.monthly),
+                      const SizedBox(height: 14),
+                      _TopProductsCard(items: data.topProducts),
+                    ],
                     if (isAdmin) ...[
                       const SizedBox(height: 28),
                       _SectionTitle(

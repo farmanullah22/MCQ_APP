@@ -14,9 +14,11 @@ class SaleRepository {
   SaleRepository(this._api);
   final ApiClient _api;
 
-  Future<SalePage> getSales({String? shopId, int page = 1, int limit = 30}) async {
+  Future<SalePage> getSales({String? shopId, DateTime? from, DateTime? to, int page = 1, int limit = 30}) async {
     final res = await _api.request('GET', '/sales', query: {
       'shopId': ?shopId,
+      if (from != null) 'from': from.toIso8601String(),
+      if (to != null) 'to': to.toIso8601String(),
       'page': '$page',
       'limit': '$limit',
     });

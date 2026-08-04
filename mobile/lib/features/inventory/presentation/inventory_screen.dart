@@ -10,11 +10,25 @@ import '../models/inventory_log.dart';
 import '../providers/inventory_providers.dart';
 import 'stock_screens.dart';
 
-class InventoryScreen extends ConsumerWidget {
+class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InventoryScreen> createState() => _InventoryScreenState();
+}
+
+class _InventoryScreenState extends ConsumerState<InventoryScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(inventoryHistoryControllerProvider);
 
     return Scaffold(
@@ -59,31 +73,81 @@ class InventoryScreen extends ConsumerWidget {
         ),
         child: const Icon(Icons.arrow_upward),
       ),
-      body: state.data.when(
-        loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(
-          message: e.toString(),
-          onRetry: () => ref.read(inventoryHistoryControllerProvider.notifier).refresh(),
-        ),
-        data: (result) {
-          if (result.logs.isEmpty) {
-            return const EmptyState(
-              icon: Icons.sync_alt,
-              title: 'No stock activity yet',
-              subtitle: 'Stock in or stock out to see a history here.',
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () => ref.read(inventoryHistoryControllerProvider.notifier).refresh(),
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: result.logs.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) =>
-                  _InventoryTile(log: result.logs[index]),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) => setState(() => _query = v.trim().toLowerCase()),
+              decoration: InputDecoration(
+                hintText: 'Search by product or supplier...',
+                hintStyle: const TextStyle(fontSize: 14),
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 20),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.05),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: AppColors.gold.withValues(alpha: 0.28)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: AppColors.gold.withValues(alpha: 0.28)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: AppColors.gold, width: 1.4),
+                ),
+              ),
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: state.data.when(
+              loading: () => const LoadingView(),
+              error: (e, st) => ErrorView(
+                message: e.toString(),
+                onRetry: () => ref.read(inventoryHistoryControllerProvider.notifier).refresh(),
+              ),
+              data: (result) {
+                final logs = _query.isEmpty
+                    ? result.logs
+                    : result.logs
+                        .where((l) =>
+                            l.productName.toLowerCase().contains(_query) ||
+                            l.supplier.toLowerCase().contains(_query))
+                        .toList();
+                if (logs.isEmpty) {
+                  return EmptyState(
+                    icon: _query.isEmpty ? Icons.sync_alt : Icons.search_off,
+                    title: _query.isEmpty ? 'No stock activity yet' : 'No matches found',
+                    subtitle: _query.isEmpty
+                        ? 'Stock in or stock out to see a history here.'
+                        : 'No products match your search.',
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () => ref.read(inventoryHistoryControllerProvider.notifier).refresh(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+                    itemCount: logs.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) => _InventoryTile(log: logs[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

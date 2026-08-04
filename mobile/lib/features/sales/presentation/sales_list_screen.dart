@@ -34,39 +34,80 @@ class SalesListScreen extends ConsumerWidget {
             onPressed: () => ref.read(saleListControllerProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
           ),
+          IconButton(
+            tooltip: 'Filter by date',
+            onPressed: () => _pickDateRange(context, ref),
+            icon: Icon(
+              state.from != null || state.to != null ? Icons.filter_alt : Icons.filter_alt_outlined,
+              color: state.from != null || state.to != null ? AppColors.gold : null,
+            ),
+          ),
         ],
       ),
-      body: state.data.when(
-        loading: () => const LoadingView(),
-        error: (e, st) => ErrorView(
-          message: e.toString(),
-          onRetry: () => ref.read(saleListControllerProvider.notifier).refresh(),
-        ),
-        data: (page) {
-          if (page.sales.isEmpty) {
-            return const EmptyState(
-              icon: Icons.point_of_sale_outlined,
-              title: 'No sales yet',
-              subtitle: 'Record your first sale to get started.',
-            );
-          }
-          return RefreshIndicator(
-            onRefresh: () => ref.read(saleListControllerProvider.notifier).refresh(),
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              itemCount: page.sales.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (context, index) => _SaleTile(
-                sale: page.sales[index],
-                onTap: () => _openDetail(context, ref, page.sales[index]),
-                canDelete: isAdmin,
-                onDelete: () => _confirmDelete(context, ref, page.sales[index]),
-              ),
+      body: Column(
+        children: [
+          if (state.from != null || state.to != null)
+            _DateFilterBar(
+              from: state.from,
+              to: state.to,
+              onClear: () =>
+                  ref.read(saleListControllerProvider.notifier).setDateRange(null, null),
             ),
-          );
-        },
+          Expanded(
+            child: state.data.when(
+              loading: () => const LoadingView(),
+              error: (e, st) => ErrorView(
+                message: e.toString(),
+                onRetry: () => ref.read(saleListControllerProvider.notifier).refresh(),
+              ),
+              data: (page) {
+                if (page.sales.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.point_of_sale_outlined,
+                    title: 'No sales found',
+                    subtitle: 'No sales match this filter yet.',
+                  );
+                }
+                return RefreshIndicator(
+                  onRefresh: () => ref.read(saleListControllerProvider.notifier).refresh(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    itemCount: page.sales.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) => _SaleTile(
+                      sale: page.sales[index],
+                      onTap: () => _openDetail(context, ref, page.sales[index]),
+                      canDelete: isAdmin,
+                      onDelete: () => _confirmDelete(context, ref, page.sales[index]),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _pickDateRange(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(saleListControllerProvider);
+    final now = DateTime.now();
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year, now.month, now.day),
+      helpText: 'Filter sales by date',
+      saveText: 'Apply',
+      initialDateRange: current.from != null && current.to != null
+          ? DateTimeRange(start: current.from!, end: current.to!)
+          : null,
+    );
+    if (range == null) return;
+    await ref.read(saleListControllerProvider.notifier).setDateRange(
+          DateTime(range.start.year, range.start.month, range.start.day),
+          DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59),
+        );
   }
 
   void _openDetail(BuildContext context, WidgetRef ref, Sale sale) {
@@ -105,6 +146,68 @@ class SalesListScreen extends ConsumerWidget {
         SnackBar(content: Text(ref.read(saleMutationControllerProvider).error ?? 'Delete failed')),
       );
     }
+  }
+}
+
+class _DateFilterBar extends StatelessWidget {
+  const _DateFilterBar({required this.from, required this.to, required this.onClear});
+
+  final DateTime? from;
+  final DateTime? to;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = [
+      if (from != null) 'From ${Formatters.date(from!)}',
+      if (to != null) 'To ${Formatters.date(to!)}',
+    ].join('  ·  ');
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.date_range, size: 16, color: AppColors.gold),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.gold,
+              ),
+            ),
+          ),
+          InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: onClear,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.close, size: 14, color: AppColors.gold),
+                  SizedBox(width: 2),
+                  Text(
+                    'Clear',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.gold),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
