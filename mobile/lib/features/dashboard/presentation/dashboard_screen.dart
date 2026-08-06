@@ -109,7 +109,10 @@ class DashboardScreen extends ConsumerWidget {
     return [
       _LuxHeader(user: user, isAdmin: true, onOpenDrawer: onOpenDrawer),
       const SizedBox(height: 24),
-      _RevenueCard(data: data),
+      if (data.comparison.isEmpty)
+        _RevenueCard(data: data)
+      else
+        _BranchSlider(branches: data.comparison, onOpen: (c) => _openShop(context, c)),
       const SizedBox(height: 22),
       _StatGrid(cards: data.cards),
       const SizedBox(height: 22),
@@ -142,28 +145,6 @@ class DashboardScreen extends ConsumerWidget {
       ),
       const SizedBox(height: 12),
       _TopProductsCard(items: data.topProducts),
-      const SizedBox(height: 28),
-      const _SectionTitle(
-        title: 'Branch Overview',
-        subtitle: 'Revenue, profit and sales across showrooms',
-      ),
-      const SizedBox(height: 12),
-      if (data.comparison.isEmpty)
-        const _EmptyNote('No branches available yet')
-      else
-        ...data.comparison.indexed.map(
-          (e) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _BranchCard(
-              name: e.$2.shopName ?? 'Branch ${e.$1 + 1}',
-              manager: e.$2.manager,
-              revenue: e.$2.sales,
-              profit: e.$2.profit,
-              saleCount: e.$2.saleCount,
-              onOpen: () => _openShop(context, e.$2),
-            ),
-          ),
-        ),
       const SizedBox(height: 28),
       const _SectionTitle(
         title: 'Top Customers',
@@ -1472,6 +1453,82 @@ class _ProductActivityRow extends StatelessWidget {
 
 // --------------------------------------------------------------- branches --
 
+class _BranchSlider extends StatefulWidget {
+  const _BranchSlider({required this.branches, required this.onOpen});
+
+  final List<ShopComparison> branches;
+  final void Function(ShopComparison branch) onOpen;
+
+  @override
+  State<_BranchSlider> createState() => _BranchSliderState();
+}
+
+class _BranchSliderState extends State<_BranchSlider> {
+  final _controller = PageController(viewportFraction: 0.88);
+  int _current = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 198,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: widget.branches.length,
+            onPageChanged: (i) => setState(() => _current = i),
+            itemBuilder: (context, index) {
+              final branch = widget.branches[index];
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: _BranchCard(
+                  name: branch.shopName ?? 'Branch ${index + 1}',
+                  manager: branch.manager,
+                  revenue: branch.sales,
+                  profit: branch.profit,
+                  saleCount: branch.saleCount,
+                  onOpen: () => widget.onOpen(branch),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            widget.branches.length,
+            (i) => AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: i == _current ? 22 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                gradient: i == _current
+                    ? const LinearGradient(
+                        colors: [_goldLight, _gold, _goldDark],
+                      )
+                    : null,
+                color: i == _current
+                    ? null
+                    : Colors.white.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _BranchCard extends StatelessWidget {
   const _BranchCard({
     required this.name,
@@ -1492,7 +1549,7 @@ class _BranchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _GlassCard(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1552,7 +1609,7 @@ class _BranchCard extends StatelessWidget {
               const _StatusBadge(),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           Divider(
             height: 1,
             thickness: 1,
