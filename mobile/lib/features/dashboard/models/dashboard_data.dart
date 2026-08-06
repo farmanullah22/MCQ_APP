@@ -94,6 +94,68 @@ class ActivityItem {
       );
 }
 
+class LowStockProduct {
+  final String id;
+  final String name;
+  final String sku;
+  final double quantity;
+  final double lowStockThreshold;
+  final double sellingPrice;
+
+  const LowStockProduct({
+    required this.id,
+    required this.name,
+    this.sku = '',
+    this.quantity = 0,
+    this.lowStockThreshold = 0,
+    this.sellingPrice = 0,
+  });
+
+  factory LowStockProduct.fromJson(Map<String, dynamic> json) => LowStockProduct(
+        id: (json['id'] ?? json['_id']).toString(),
+        name: json['name']?.toString() ?? 'Product',
+        sku: json['sku']?.toString() ?? '',
+        quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
+        lowStockThreshold: (json['lowStockThreshold'] as num?)?.toDouble() ?? 0,
+        sellingPrice: (json['sellingPrice'] as num?)?.toDouble() ?? 0,
+      );
+}
+
+class TopCustomer {
+  final String name;
+  final String phone;
+  final double total;
+  final int orders;
+
+  const TopCustomer({
+    required this.name,
+    this.phone = '',
+    this.total = 0,
+    this.orders = 0,
+  });
+
+  factory TopCustomer.fromJson(Map<String, dynamic> json) => TopCustomer(
+        name: json['name']?.toString() ?? 'Customer',
+        phone: json['phone']?.toString() ?? '',
+        total: (json['total'] as num?)?.toDouble() ?? 0,
+        orders: (json['orders'] as num?)?.toInt() ?? 0,
+      );
+}
+
+class ManagerBranch {
+  final String id;
+  final String name;
+  final String address;
+
+  const ManagerBranch({required this.id, required this.name, this.address = ''});
+
+  factory ManagerBranch.fromJson(Map<String, dynamic> json) => ManagerBranch(
+        id: (json['id'] ?? json['_id']).toString(),
+        name: json['name']?.toString() ?? '',
+        address: json['address']?.toString() ?? '',
+      );
+}
+
 class DashboardCards {
   final int totalShops;
   final int totalProducts;
@@ -109,6 +171,12 @@ class DashboardCards {
   final double yearlyProfit;
   final double yearlyExpenses;
 
+  // Manager (operational) KPI cards — no financial values.
+  final int todayOrders;
+  final int customerCount;
+  final int stockInToday;
+  final int stockOutToday;
+
   const DashboardCards({
     this.totalShops = 0,
     this.totalProducts = 0,
@@ -123,6 +191,10 @@ class DashboardCards {
     this.yearlyRevenue = 0,
     this.yearlyProfit = 0,
     this.yearlyExpenses = 0,
+    this.todayOrders = 0,
+    this.customerCount = 0,
+    this.stockInToday = 0,
+    this.stockOutToday = 0,
   });
 
   factory DashboardCards.fromJson(Map<String, dynamic> json) => DashboardCards(
@@ -139,10 +211,15 @@ class DashboardCards {
         yearlyRevenue: (json['yearlyRevenue'] as num?)?.toDouble() ?? 0,
         yearlyProfit: (json['yearlyProfit'] as num?)?.toDouble() ?? 0,
         yearlyExpenses: (json['yearlyExpenses'] as num?)?.toDouble() ?? 0,
+        todayOrders: (json['todayOrders'] as num?)?.toInt() ?? 0,
+        customerCount: (json['customerCount'] as num?)?.toInt() ?? 0,
+        stockInToday: (json['stockInToday'] as num?)?.toInt() ?? 0,
+        stockOutToday: (json['stockOutToday'] as num?)?.toInt() ?? 0,
       );
 }
 
 class DashboardData {
+  final String? role;
   final DashboardCards cards;
   final List<ChartPoint> daily;
   final List<ChartPoint> weekly;
@@ -152,9 +229,13 @@ class DashboardData {
   final List<ExpenseCategoryTotal> expenseBreakdown;
   final List<ShopSummary> shops;
   final List<TopProduct> topProducts;
+  final List<TopCustomer> topCustomers;
+  final List<LowStockProduct> lowStock;
   final List<ActivityItem> recentActivity;
+  final ManagerBranch? branch;
 
   const DashboardData({
+    this.role,
     this.cards = const DashboardCards(),
     this.daily = const [],
     this.weekly = const [],
@@ -164,12 +245,17 @@ class DashboardData {
     this.expenseBreakdown = const [],
     this.shops = const [],
     this.topProducts = const [],
+    this.topCustomers = const [],
+    this.lowStock = const [],
     this.recentActivity = const [],
+    this.branch,
   });
 
   factory DashboardData.fromJson(Map<String, dynamic> json) {
     final charts = json['charts'] as Map<String, dynamic>? ?? const {};
+    final branchJson = json['branch'];
     return DashboardData(
+      role: json['role']?.toString(),
       cards: DashboardCards.fromJson(json['cards'] as Map<String, dynamic>? ?? const {}),
       daily: (charts['daily'] as List?)?.map((e) => ChartPoint.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
       weekly: (charts['weekly'] as List?)?.map((e) => ChartPoint.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
@@ -179,7 +265,10 @@ class DashboardData {
       expenseBreakdown: (charts['expenseBreakdown'] as List?)?.map((e) => ExpenseCategoryTotal.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
       shops: (json['shops'] as List?)?.map((e) => ShopSummary.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
       topProducts: (json['topProducts'] as List?)?.map((e) => TopProduct.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
+      topCustomers: (json['topCustomers'] as List?)?.map((e) => TopCustomer.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
+      lowStock: (json['lowStock'] as List?)?.map((e) => LowStockProduct.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
       recentActivity: (json['recentActivity'] as List?)?.map((e) => ActivityItem.fromJson(e as Map<String, dynamic>)).toList() ?? const [],
+      branch: branchJson is Map<String, dynamic> ? ManagerBranch.fromJson(branchJson) : null,
     );
   }
 }

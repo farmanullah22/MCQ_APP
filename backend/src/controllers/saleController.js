@@ -36,6 +36,8 @@ const listSales = asyncHandler(async (req, res) => {
     Sale.find(filter)
       .populate('shop', 'name')
       .populate('createdBy', 'name role')
+      // Managers must not see profit margins or cost prices.
+      .select(req.user.role === 'manager' ? '-profit -items.costPrice' : '')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit),
@@ -48,7 +50,8 @@ const listSales = asyncHandler(async (req, res) => {
 const getSale = asyncHandler(async (req, res) => {
   const sale = await Sale.findById(req.params.id)
     .populate('shop', 'name address contactNumber')
-    .populate('createdBy', 'name role');
+    .populate('createdBy', 'name role')
+    .select(req.user.role === 'manager' ? '-profit -items.costPrice' : '');
   if (!sale || sale.isDeleted) throw new ApiError(404, 'Sale not found.');
   res.json(ApiResponse.ok('Sale fetched', sale));
 });

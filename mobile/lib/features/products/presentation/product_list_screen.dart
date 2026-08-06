@@ -6,6 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../categories/providers/category_providers.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../../inventory/presentation/stock_screens.dart';
 import '../models/product.dart';
 import '../providers/product_providers.dart';
@@ -31,6 +32,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(productListControllerProvider);
     final categories = ref.watch(categoryListControllerProvider).data.value ?? const [];
+    final isAdmin = ref.watch(currentUserProvider)?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -44,11 +46,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
               color: state.lowStockOnly ? AppColors.danger : null,
             ),
           ),
-          IconButton(
-            tooltip: 'Add Product',
-            onPressed: () => _openForm(context),
-            icon: const Icon(Icons.add),
-          ),
+          if (!isAdmin)
+            IconButton(
+              tooltip: 'Add Product',
+              onPressed: () => _openForm(context),
+              icon: const Icon(Icons.add),
+            ),
         ],
       ),
       body: Column(
@@ -111,7 +114,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                     icon: Icons.inventory_2_outlined,
                     title: state.lowStockOnly ? 'No low stock products' : 'No products found',
                     subtitle: state.lowStockOnly ? 'All products are well stocked.' : 'Add your first product to get started.',
-                    action: state.lowStockOnly ? null : () => _openForm(context),
+                    action: state.lowStockOnly || isAdmin ? null : () => _openForm(context),
                   );
                 }
                 return RefreshIndicator(
@@ -123,7 +126,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       final product = page.products[index];
                       return _ProductCard(
                         product: product,
-                        onTap: () => _openForm(context, product: product),
+                        onTap: isAdmin ? null : () => _openForm(context, product: product),
                         onEdit: () => _openForm(context, product: product),
                         onStockIn: () => _openStockIn(context, product),
                         onDelete: () => _confirmDelete(context, product),
@@ -180,14 +183,14 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
 class _ProductCard extends StatelessWidget {
   const _ProductCard({
     required this.product,
-    required this.onTap,
+    this.onTap,
     required this.onEdit,
     required this.onStockIn,
     required this.onDelete,
   });
 
   final Product product;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback onEdit;
   final VoidCallback onStockIn;
   final VoidCallback onDelete;

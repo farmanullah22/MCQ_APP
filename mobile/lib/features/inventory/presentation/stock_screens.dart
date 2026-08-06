@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/status_views.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../../products/models/product.dart';
 import '../../products/providers/product_providers.dart';
 import '../providers/inventory_providers.dart';
@@ -222,6 +223,7 @@ class LowStockScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(productListControllerProvider.select((s) => s));
+    final isAdmin = ref.watch(currentUserProvider)?.isAdmin ?? false;
     return Scaffold(
       appBar: AppBar(title: const Text('Low Stock Alerts')),
       body: state.data.when(
@@ -242,12 +244,14 @@ class LowStockScreen extends ConsumerWidget {
                   leading: const Icon(Icons.warning_amber, color: AppColors.danger),
                   title: Text(p.name),
                   subtitle: Text('Only ${p.quantity} left (threshold ${p.lowStockThreshold})'),
-                  trailing: TextButton(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => StockInScreen(productId: p.id)),
-                    ),
-                    child: const Text('Restock'),
-                  ),
+                  trailing: isAdmin
+                      ? null
+                      : TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => StockInScreen(productId: p.id)),
+                          ),
+                          child: const Text('Restock'),
+                        ),
                 ),
               );
             },

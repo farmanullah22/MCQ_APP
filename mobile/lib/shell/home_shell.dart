@@ -7,6 +7,7 @@ import '../features/analytics/presentation/analytics_screen.dart';
 import '../features/audit/presentation/audit_logs_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/categories/presentation/category_screen.dart';
+import '../features/customers/presentation/customers_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/expenses/presentation/expense_list_screen.dart';
 import '../features/inventory/presentation/inventory_screen.dart';
@@ -18,6 +19,7 @@ import '../features/sales/presentation/sales_list_screen.dart';
 import '../features/settings/presentation/profile_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
 import '../features/shops/presentation/shops_screen.dart';
+import '../features/suppliers/presentation/suppliers_screen.dart';
 
 class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
@@ -27,25 +29,23 @@ class HomeShell extends ConsumerStatefulWidget {
 }
 
 class _HomeShellState extends ConsumerState<HomeShell> {
+  static const _routes = ['dashboard', 'sales', 'inventory', 'customers', 'suppliers'];
+
   int _index = 0;
   final Map<String, Widget> _cache = {};
-
-  List<String> _routes(bool isAdmin) => isAdmin
-      ? const ['dashboard', 'inventory', 'sales', 'reports', 'profile']
-      : const ['dashboard', 'inventory', 'profile'];
 
   Widget _screenFor(String route) => _cache.putIfAbsent(route, () {
         switch (route) {
           case 'dashboard':
             return const DashboardScreen();
-          case 'inventory':
-            return const InventoryScreen();
           case 'sales':
             return const SalesListScreen();
-          case 'reports':
-            return const ReportsScreen();
-          case 'profile':
-            return const ProfileScreen();
+          case 'inventory':
+            return const InventoryScreen();
+          case 'customers':
+            return const CustomersScreen();
+          case 'suppliers':
+            return const SuppliersScreen();
         }
         return const SizedBox.shrink();
       });
@@ -54,18 +54,17 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final isAdmin = user?.isAdmin ?? false;
-    final routes = _routes(isAdmin);
-    final index = _index < routes.length ? _index : routes.length - 1;
+    final index = _index < _routes.length ? _index : _routes.length - 1;
 
     return Scaffold(
       body: IndexedStack(
         index: index,
-        children: [for (final route in routes) _screenFor(route)],
+        children: [for (final route in _routes) _screenFor(route)],
       ),
       drawer: _buildDrawer(context, isAdmin),
       bottomNavigationBar: _PremiumBottomNav(
         currentIndex: index,
-        routes: routes,
+        routes: _routes,
         onTap: (i) => setState(() => _index = i),
       ),
     );
@@ -74,56 +73,93 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   Drawer _buildDrawer(BuildContext context, bool isAdmin) {
     final theme = Theme.of(context);
     final user = ref.read(currentUserProvider);
+    final scope = isAdmin ? 'Administrator' : (user?.assignedShopName ?? 'Shop Manager');
+
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          DrawerHeader(
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 44, 20, 22),
             decoration: const BoxDecoration(
               gradient: AppColors.emeraldGradient,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  child: Text(
-                    (user?.name ?? 'M').characters.first.toUpperCase(),
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  user?.name ?? 'User',
-                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  user?.email ?? '',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 26,
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                      child: Text(
+                        (user?.name ?? 'M').characters.first.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.goldLight,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.name ?? 'User',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            scope,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.75),
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            user?.email ?? '',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          _DrawerItem(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: () => _go('dashboard', isAdmin)),
-          _DrawerItem(icon: Icons.inventory_2_outlined, label: 'Inventory', onTap: () => _go('inventory', isAdmin)),
-          if (isAdmin) ...[
-            _DrawerItem(icon: Icons.point_of_sale_outlined, label: 'Sales', onTap: () => _go('sales', isAdmin)),
-            _DrawerItem(icon: Icons.bar_chart_outlined, label: 'Reports', onTap: () => _go('reports', isAdmin)),
-          ],
-          _DrawerItem(icon: Icons.shopping_cart_outlined, label: 'Products', onTap: () => _open(const ProductListScreen())),
+          const _DrawerSection('Navigation'),
+          _DrawerItem(icon: Icons.dashboard_outlined, label: 'Dashboard', onTap: () => _go('dashboard')),
+          _DrawerItem(icon: Icons.point_of_sale_outlined, label: 'Sales', onTap: () => _go('sales')),
+          _DrawerItem(icon: Icons.inventory_2_outlined, label: 'Inventory', onTap: () => _go('inventory')),
+          _DrawerItem(icon: Icons.people_outline, label: 'Customers', onTap: () => _go('customers')),
+          _DrawerItem(icon: Icons.local_shipping_outlined, label: 'Suppliers', onTap: () => _go('suppliers')),
+          const Divider(),
+          const _DrawerSection('Modules'),
+          _DrawerItem(icon: Icons.shopping_bag_outlined, label: 'Products', onTap: () => _open(const ProductListScreen())),
           _DrawerItem(icon: Icons.receipt_long_outlined, label: 'Expenses', onTap: () => _open(const ExpenseListScreen())),
           if (isAdmin) ...[
             const Divider(),
+            const _DrawerSection('Administration'),
+            _DrawerItem(icon: Icons.bar_chart_outlined, label: 'Reports', onTap: () => _open(const ReportsScreen())),
+            _DrawerItem(icon: Icons.storefront_outlined, label: 'Outlets', onTap: () => _open(const ShopsScreen())),
             _DrawerItem(icon: Icons.assessment_outlined, label: 'Analytics', onTap: () => _open(const AnalyticsScreen())),
             _DrawerItem(icon: Icons.category_outlined, label: 'Categories', onTap: () => _open(const CategoryScreen())),
-            _DrawerItem(icon: Icons.storefront_outlined, label: 'Shops', onTap: () => _open(const ShopsScreen())),
             _DrawerItem(icon: Icons.manage_accounts_outlined, label: 'Managers', onTap: () => _open(const ManagersScreen())),
             _DrawerItem(icon: Icons.history_outlined, label: 'Audit Logs', onTap: () => _open(const AuditLogsScreen())),
           ],
           const Divider(),
+          const _DrawerSection('General'),
           _DrawerItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => _open(const NotificationsScreen())),
+          _DrawerItem(icon: Icons.person_outline, label: 'Profile', onTap: () => _open(const ProfileScreen())),
           _DrawerItem(icon: Icons.settings_outlined, label: 'Settings', onTap: () => _open(const SettingsScreen())),
           _DrawerItem(
             icon: Icons.logout,
@@ -160,14 +196,36 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     );
   }
 
-  void _go(String route, bool isAdmin) {
+  void _go(String route) {
     Navigator.of(context).pop();
-    setState(() => _index = _routes(isAdmin).indexOf(route));
+    setState(() => _index = _routes.indexOf(route));
   }
 
   void _open(Widget screen) {
     Navigator.of(context).pop();
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+}
+
+class _DrawerSection extends StatelessWidget {
+  const _DrawerSection(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 1.6,
+          color: AppColors.goldDark,
+        ),
+      ),
+    );
   }
 }
 
@@ -180,10 +238,10 @@ class _PremiumBottomNav extends StatelessWidget {
 
   static (IconData, IconData, String) _meta(String route) => switch (route) {
         'dashboard' => (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Dashboard'),
-        'inventory' => (Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventory'),
         'sales' => (Icons.point_of_sale_outlined, Icons.point_of_sale_rounded, 'Sales'),
-        'reports' => (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Reports'),
-        'profile' => (Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
+        'inventory' => (Icons.inventory_2_outlined, Icons.inventory_2_rounded, 'Inventory'),
+        'customers' => (Icons.people_outline, Icons.people_rounded, 'Customers'),
+        'suppliers' => (Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Suppliers'),
         _ => (Icons.circle_outlined, Icons.circle, ''),
       };
 
@@ -272,8 +330,8 @@ class _NavItem extends StatelessWidget {
             curve: Curves.easeOutBack,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              width: selected ? 48 : 42,
-              height: selected ? 34 : 30,
+              width: selected ? 46 : 40,
+              height: selected ? 32 : 28,
               decoration: BoxDecoration(
                 gradient: selected ? AppColors.goldGradient : null,
                 borderRadius: BorderRadius.circular(18),
@@ -292,17 +350,17 @@ class _NavItem extends StatelessWidget {
                 child: Icon(
                   selected ? selectedIcon : icon,
                   key: ValueKey(selected),
-                  size: 21,
+                  size: 19,
                   color: selected ? AppColors.deepBlack : idleColor,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 250),
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9.5,
               fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               color: selected ? AppColors.gold : idleColor,
             ),
@@ -330,8 +388,10 @@ class _DrawerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(label, style: TextStyle(color: color)),
+      dense: true,
+      visualDensity: VisualDensity.compact,
+      leading: Icon(icon, color: color ?? AppColors.goldDark, size: 22),
+      title: Text(label, style: TextStyle(color: color, fontSize: 14)),
       onTap: onTap,
     );
   }

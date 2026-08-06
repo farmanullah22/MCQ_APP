@@ -60,94 +60,9 @@ class DashboardScreen extends ConsumerWidget {
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 150),
-                  children: [
-                    _LuxHeader(user: user, isAdmin: isAdmin),
-                    const SizedBox(height: 24),
-                    _RevenueCard(data: data),
-                    const SizedBox(height: 22),
-                    _StatGrid(cards: data.cards),
-                    const SizedBox(height: 28),
-                    _SectionTitle(
-                      title: isAdmin ? 'Branch Overview' : 'Your Branch',
-                      subtitle: isAdmin
-                          ? 'Revenue, profit and sales across showrooms'
-                          : 'Overview of your showroom',
-                    ),
-                    const SizedBox(height: 12),
-                    if (isAdmin)
-                      if (data.comparison.isEmpty)
-                        const _EmptyNote('No branches available yet')
-                      else
-                        ...data.comparison.indexed.map(
-                          (e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _BranchCard(
-                              name: e.$2.shopName ?? 'Branch ${e.$1 + 1}',
-                              manager: e.$2.manager,
-                              revenue: e.$2.sales,
-                              profit: e.$2.profit,
-                              saleCount: e.$2.saleCount,
-                              onOpen: () => _openShop(context, e.$2),
-                            ),
-                          ),
-                        )
-                    else
-                      _BranchCard(
-                        name: user?.assignedShopName ?? 'My Branch',
-                        manager: user?.name,
-                        revenue: data.cards.monthlyRevenue,
-                        profit: data.cards.monthlyProfit,
-                        saleCount: data.cards.salesTodayCount,
-                        onOpen: () {
-                          if (user?.assignedShopId == null) return;
-                          _openShop(
-                            context,
-                            ShopComparison(
-                              shopId: user!.assignedShopId!,
-                              shopName: user.assignedShopName,
-                              manager: user.name,
-                              sales: data.cards.monthlyRevenue,
-                              profit: data.cards.monthlyProfit,
-                              saleCount: data.cards.salesTodayCount,
-                            ),
-                          );
-                        },
-                      ),
-                    if (!isAdmin) ...[
-                      const SizedBox(height: 28),
-                      const _SectionTitle(
-                        title: 'Quick Actions',
-                        subtitle: 'Frequent tasks at your fingertips',
-                      ),
-                      const SizedBox(height: 12),
-                      _QuickActions(),
-                    ],
-                    if (!isAdmin) ...[
-                      const SizedBox(height: 28),
-                      const _SectionTitle(
-                        title: 'Analytics',
-                        subtitle: 'Track performance over time',
-                      ),
-                      const SizedBox(height: 12),
-                      _WeeklySalesCard(data: data.weekly),
-                      const SizedBox(height: 14),
-                      _MonthlyProfitCard(data: data.monthly),
-                      const SizedBox(height: 14),
-                      _TopProductsCard(items: data.topProducts),
-                    ],
-                    if (isAdmin) ...[
-                      const SizedBox(height: 28),
-                      _SectionTitle(
-                        title: 'Manager Logs',
-                        subtitle: 'Recent activity across branches',
-                        actionLabel: 'View All',
-                        action: () =>
-                            _push(context, ref, const AuditLogsScreen()),
-                      ),
-                      const SizedBox(height: 12),
-                      _ActivityCard(items: data.recentActivity),
-                    ],
-                  ],
+                  children: isAdmin
+                      ? _buildAdminChildren(context, ref, data, user)
+                      : _buildManagerChildren(context, data, user),
                 ),
               ),
             ),
@@ -177,6 +92,139 @@ class DashboardScreen extends ConsumerWidget {
       ),
     );
   }
+
+  void _openLowStock(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LowStockScreen()),
+    );
+  }
+
+  // ---------------------------------------------------------- admin layout --
+
+  List<Widget> _buildAdminChildren(
+      BuildContext context, WidgetRef ref, DashboardData data, User? user) {
+    return [
+      _LuxHeader(user: user, isAdmin: true),
+      const SizedBox(height: 24),
+      _RevenueCard(data: data),
+      const SizedBox(height: 22),
+      _StatGrid(cards: data.cards),
+      const SizedBox(height: 22),
+      _InventorySummaryCard(data: data),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        title: 'Sales Trends',
+        subtitle: 'Performance over time',
+      ),
+      const SizedBox(height: 12),
+      _ChartCard(
+        title: 'Daily Sales',
+        subtitle: 'Last 14 days',
+        child: _WeeklyBarChart(data: data.daily),
+      ),
+      const SizedBox(height: 14),
+      _WeeklySalesCard(data: data.weekly),
+      const SizedBox(height: 14),
+      _MonthlyProfitCard(data: data.monthly),
+      const SizedBox(height: 14),
+      _ChartCard(
+        title: 'Yearly Sales',
+        subtitle: 'Last 5 years',
+        child: _WeeklyBarChart(data: data.yearly),
+      ),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        title: 'Top Products',
+        subtitle: 'Best sellers by revenue',
+      ),
+      const SizedBox(height: 12),
+      _TopProductsCard(items: data.topProducts),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        title: 'Branch Overview',
+        subtitle: 'Revenue, profit and sales across showrooms',
+      ),
+      const SizedBox(height: 12),
+      if (data.comparison.isEmpty)
+        const _EmptyNote('No branches available yet')
+      else
+        ...data.comparison.indexed.map(
+          (e) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _BranchCard(
+              name: e.$2.shopName ?? 'Branch ${e.$1 + 1}',
+              manager: e.$2.manager,
+              revenue: e.$2.sales,
+              profit: e.$2.profit,
+              saleCount: e.$2.saleCount,
+              onOpen: () => _openShop(context, e.$2),
+            ),
+          ),
+        ),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        title: 'Top Customers',
+        subtitle: 'Highest spenders across showrooms',
+      ),
+      const SizedBox(height: 12),
+      _TopCustomersCard(items: data.topCustomers),
+      const SizedBox(height: 28),
+      _SectionTitle(
+        title: 'Manager Logs',
+        subtitle: 'Recent activity across branches',
+        actionLabel: 'View All',
+        action: () => _push(context, ref, const AuditLogsScreen()),
+      ),
+      const SizedBox(height: 12),
+      _ActivityCard(items: data.recentActivity),
+    ];
+  }
+
+  // ------------------------------------------------------- manager layout --
+
+  List<Widget> _buildManagerChildren(BuildContext context, DashboardData data, User? user) {
+    return [
+      _LuxHeader(user: user, isAdmin: false),
+      const SizedBox(height: 24),
+      _ManagerStatGrid(cards: data.cards),
+      const SizedBox(height: 22),
+      _StockMovementCard(cards: data.cards),
+      const SizedBox(height: 28),
+      _SectionTitle(
+        title: 'Low Stock Alerts',
+        subtitle: data.lowStock.isEmpty
+            ? 'All products are well stocked'
+            : '${data.lowStock.length} product${data.lowStock.length == 1 ? '' : 's'} need attention',
+        actionLabel: data.lowStock.isEmpty ? null : 'View All',
+        action: data.lowStock.isEmpty ? null : () => _openLowStock(context),
+      ),
+      const SizedBox(height: 12),
+      _LowStockCard(items: data.lowStock),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        title: 'Quick Actions',
+        subtitle: 'Frequent tasks at your fingertips',
+      ),
+      const SizedBox(height: 12),
+      _QuickActions(),
+      const SizedBox(height: 28),
+      const _SectionTitle(
+        title: 'Recent Inventory Activity',
+        subtitle: 'Stock movements and product changes',
+      ),
+      const SizedBox(height: 12),
+      _ActivityCard(items: data.recentActivity),
+      if (data.topProducts.isNotEmpty) ...[
+        const SizedBox(height: 28),
+        const _SectionTitle(
+          title: 'Product Activity',
+          subtitle: 'Best sellers by units sold',
+        ),
+        const SizedBox(height: 12),
+        _ProductActivityCard(items: data.topProducts),
+      ],
+    ];
+  }
 }
 
 // ---------------------------------------------------------------- backdrop --
@@ -189,25 +237,22 @@ class _DashboardBackground extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
+        Image.asset(
+          'lib/images/admin_dashboard.jfif',
+          fit: BoxFit.cover,
+        ),
         const DecoratedBox(
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [_bg, Color(0xFF100E14), Color(0xFF0B0B0F)],
+              colors: [
+                Color(0x50050505),
+                Color(0x99050505),
+                Color(0xB8050505),
+              ],
+              stops: [0, 0.55, 1],
             ),
-          ),
-        ),
-        Opacity(
-          opacity: 0.16,
-          child: Image.asset(
-            'lib/images/admin_dashboard.jfif',
-            fit: BoxFit.cover,
-          ),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.70),
           ),
         ),
         Positioned(
@@ -777,12 +822,14 @@ class _StatTile extends StatelessWidget {
     required this.value,
     required this.icon,
     this.subtitle,
+    this.currency = true,
   });
 
   final String title;
   final num value;
   final IconData icon;
   final String? subtitle;
+  final bool currency;
 
   @override
   Widget build(BuildContext context) {
@@ -823,6 +870,7 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 14),
           _AnimatedNumber(
             value: value,
+            currency: currency,
             style: GoogleFonts.poppins(
               fontSize: 17,
               fontWeight: FontWeight.w800,
@@ -852,6 +900,559 @@ class _StatTile extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------------ inventory summary --
+
+class _InventorySummaryCard extends StatelessWidget {
+  const _InventorySummaryCard({required this.data});
+
+  final DashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = data.cards;
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_goldLight, _gold, _goldDark],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _gold.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.inventory_2_outlined,
+                  size: 18,
+                  color: Color(0xFF17151C),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Inventory Summary',
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _SummaryMetric(label: 'Products', value: Formatters.number(cards.totalProducts)),
+              _SummaryMetric(label: 'Stock Value', value: Formatters.compact(cards.totalStockValue)),
+              _SummaryMetric(
+                label: 'Low Stock',
+                value: '${cards.lowStockCount}',
+                warn: cards.lowStockCount > 0,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryMetric extends StatelessWidget {
+  const _SummaryMetric({required this.label, required this.value, this.warn = false});
+
+  final String label;
+  final String value;
+  final bool warn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 9,
+              letterSpacing: 0.9,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              color: warn ? AppColors.premiumRedLight : Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------- top customers --
+
+class _TopCustomersCard extends StatelessWidget {
+  const _TopCustomersCard({required this.items});
+
+  final List<TopCustomer> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: items.isEmpty
+          ? const _EmptyNote('No customer data yet')
+          : Column(
+              children: items
+                  .take(5)
+                  .indexed
+                  .map((e) => _CustomerRow(index: e.$1, customer: e.$2))
+                  .toList(),
+            ),
+    );
+  }
+}
+
+class _CustomerRow extends StatelessWidget {
+  const _CustomerRow({required this.index, required this.customer});
+
+  final int index;
+  final TopCustomer customer;
+
+  @override
+  Widget build(BuildContext context) {
+    final rankColor = index == 0
+        ? const [_goldLight, _gold, _goldDark]
+        : index == 1
+            ? [const Color(0xFFD8D8D8), const Color(0xFF9A9A9A)]
+            : [const Color(0xFFE0B884), const Color(0xFFA87B48)];
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              gradient: index < 3
+                  ? LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: rankColor,
+                    )
+                  : null,
+              color: index < 3 ? null : Colors.white.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${index + 1}',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: index < 3
+                    ? const Color(0xFF17151C)
+                    : Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  customer.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  customer.phone.isEmpty
+                      ? '${customer.orders} orders'
+                      : '${customer.phone} · ${customer.orders} orders',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            Formatters.compact(customer.total),
+            style: GoogleFonts.poppins(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: _goldLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ------------------------------------------------------- manager stat grid --
+
+class _ManagerStatGrid extends StatelessWidget {
+  const _ManagerStatGrid({required this.cards});
+
+  final DashboardCards cards;
+
+  @override
+  Widget build(BuildContext context) {
+    final tiles = <Widget>[
+      _StatTile(
+        title: 'Products',
+        value: cards.totalProducts,
+        icon: Icons.inventory_2_outlined,
+        subtitle: 'Active in your branch',
+        currency: false,
+      ),
+      _StatTile(
+        title: "Today's Orders",
+        value: cards.todayOrders,
+        icon: Icons.point_of_sale_rounded,
+        subtitle: 'Sales transactions today',
+        currency: false,
+      ),
+      _StatTile(
+        title: 'Low Stock',
+        value: cards.lowStockCount,
+        icon: Icons.warning_amber_rounded,
+        subtitle: 'Need restocking',
+        currency: false,
+      ),
+      _StatTile(
+        title: 'Customers',
+        value: cards.customerCount,
+        icon: Icons.people_outline,
+        subtitle: 'Served to date',
+        currency: false,
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: tiles.map((w) => SizedBox(width: width, child: w)).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _StockMovementCard extends StatelessWidget {
+  const _StockMovementCard({required this.cards});
+
+  final DashboardCards cards;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: _MovementMetric(
+              icon: Icons.south_west_rounded,
+              label: 'Stock In Today',
+              value: cards.stockInToday,
+              color: const Color(0xFF6FBE8C),
+            ),
+          ),
+          Container(width: 1, height: 40, color: Colors.white.withValues(alpha: 0.08)),
+          Expanded(
+            child: _MovementMetric(
+              icon: Icons.north_east_rounded,
+              label: 'Stock Out Today',
+              value: cards.stockOutToday,
+              color: _goldLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MovementMetric extends StatelessWidget {
+  const _MovementMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 6),
+            Text(
+              '$value',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.55),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ------------------------------------------------------------ low stock card --
+
+class _LowStockCard extends StatelessWidget {
+  const _LowStockCard({required this.items});
+
+  final List<LowStockProduct> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const _GlassCard(
+        child: _EmptyNote('No low stock items — you are all stocked up!'),
+      );
+    }
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          for (final item in items.take(6)) _LowStockRow(item: item),
+          if (items.length > 6)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '+${items.length - 6} more',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.white.withValues(alpha: 0.4),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LowStockRow extends StatelessWidget {
+  const _LowStockRow({required this.item});
+
+  final LowStockProduct item;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = item.lowStockThreshold > 0
+        ? (item.quantity / item.lowStockThreshold).clamp(0.0, 1.0)
+        : 1.0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.premiumRed.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.premiumRedLight.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            size: 18,
+            color: AppColors.premiumRedLight,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: pct,
+                    minHeight: 4,
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    valueColor: const AlwaysStoppedAnimation(AppColors.premiumRedLight),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            '${item.quantity.round()} left',
+            style: GoogleFonts.poppins(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              color: AppColors.premiumRedLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------- product activity --
+
+class _ProductActivityCard extends StatelessWidget {
+  const _ProductActivityCard({required this.items});
+
+  final List<TopProduct> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return _GlassCard(
+      padding: const EdgeInsets.all(16),
+      child: items.isEmpty
+          ? const _EmptyNote('No product activity yet')
+          : Column(
+              children: items
+                  .take(5)
+                  .indexed
+                  .map((e) => _ProductActivityRow(index: e.$1, product: e.$2))
+                  .toList(),
+            ),
+    );
+  }
+}
+
+class _ProductActivityRow extends StatelessWidget {
+  const _ProductActivityRow({required this.index, required this.product});
+
+  final int index;
+  final TopProduct product;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              gradient: index < 3
+                  ? const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [_goldLight, _gold, _goldDark],
+                    )
+                  : null,
+              color: index < 3 ? null : Colors.white.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${index + 1}',
+              style: GoogleFonts.poppins(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: index < 3
+                    ? const Color(0xFF17151C)
+                    : Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              product.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Text(
+            '${product.quantity} sold',
+            style: GoogleFonts.poppins(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
+              color: _goldLight,
+            ),
+          ),
         ],
       ),
     );
@@ -1794,10 +2395,11 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _AnimatedNumber extends StatelessWidget {
-  const _AnimatedNumber({required this.value, required this.style});
+  const _AnimatedNumber({required this.value, required this.style, this.currency = true});
 
   final num value;
   final TextStyle style;
+  final bool currency;
 
   @override
   Widget build(BuildContext context) {
@@ -1806,7 +2408,7 @@ class _AnimatedNumber extends StatelessWidget {
       duration: const Duration(milliseconds: 900),
       curve: Curves.easeOutCubic,
       builder: (context, v, _) => Text(
-        Formatters.currency(v),
+        currency ? Formatters.currency(v) : Formatters.number(v),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: style,

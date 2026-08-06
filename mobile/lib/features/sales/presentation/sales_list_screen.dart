@@ -77,7 +77,7 @@ class SalesListScreen extends ConsumerWidget {
                     itemBuilder: (context, index) => _SaleTile(
                       sale: page.sales[index],
                       onTap: () => _openDetail(context, ref, page.sales[index]),
-                      canDelete: isAdmin,
+                      canDelete: !isAdmin,
                       onDelete: () => _confirmDelete(context, ref, page.sales[index]),
                     ),
                   ),

@@ -6,6 +6,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/status_views.dart';
+import '../../auth/providers/auth_providers.dart';
 import '../models/inventory_log.dart';
 import '../providers/inventory_providers.dart';
 import 'stock_screens.dart';
@@ -30,6 +31,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryHistoryControllerProvider);
+    final isAdmin = ref.watch(currentUserProvider)?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -64,15 +66,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.small(
-        heroTag: 'stockOut',
-        tooltip: 'Stock Out',
-        backgroundColor: AppColors.danger,
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const StockOutScreen()),
-        ),
-        child: const Icon(Icons.arrow_upward),
-      ),
+      // Admin is view-only: stock mutations are manager actions.
+      floatingActionButton: isAdmin
+          ? null
+          : FloatingActionButton.small(
+              heroTag: 'stockOut',
+              tooltip: 'Stock Out',
+              backgroundColor: AppColors.danger,
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StockOutScreen()),
+              ),
+              child: const Icon(Icons.arrow_upward),
+            ),
       body: Column(
         children: [
           Padding(

@@ -1,14 +1,16 @@
 const express = require('express');
 const productController = require('../controllers/productController');
+const { restrictTo } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', productController.listProducts);
 router.get('/low-stock', productController.lowStockProducts);
 router.get('/:id', productController.getProduct);
 
-router.post('/', productController.createProduct);
-router.put('/:id', productController.updateProduct);
-router.delete('/:id', productController.deleteProduct);
-router.post('/:id/restore', productController.restoreProduct);
+// Admin is view-only. Product mutations are manager (operational) actions.
+router.post('/', restrictTo('manager'), productController.createProduct);
+router.put('/:id', restrictTo('manager'), productController.updateProduct);
+router.delete('/:id', restrictTo('manager'), productController.deleteProduct);
+router.post('/:id/restore', restrictTo('manager'), productController.restoreProduct);
 
 module.exports = router;

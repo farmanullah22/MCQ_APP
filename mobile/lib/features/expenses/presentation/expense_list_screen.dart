@@ -28,13 +28,14 @@ class ExpenseListScreen extends ConsumerWidget {
             onPressed: () => ref.read(expenseListControllerProvider.notifier).refresh(),
             icon: const Icon(Icons.refresh),
           ),
-          IconButton(
-            tooltip: 'Add Expense',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ExpenseFormScreen()),
+          if (!isAdmin)
+            IconButton(
+              tooltip: 'Add Expense',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ExpenseFormScreen()),
+              ),
+              icon: const Icon(Icons.add),
             ),
-            icon: const Icon(Icons.add),
-          ),
         ],
       ),
       body: state.data.when(
@@ -59,7 +60,7 @@ class ExpenseListScreen extends ConsumerWidget {
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) => _ExpenseTile(
                 expense: page.expenses[index],
-                canDelete: isAdmin,
+                canDelete: !isAdmin,
                 onDelete: () => _confirmDelete(context, ref, page.expenses[index]),
               ),
             ),
