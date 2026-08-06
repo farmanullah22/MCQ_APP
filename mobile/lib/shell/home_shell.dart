@@ -33,11 +33,14 @@ class _HomeShellState extends ConsumerState<HomeShell> {
 
   int _index = 0;
   final Map<String, Widget> _cache = {};
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   Widget _screenFor(String route) => _cache.putIfAbsent(route, () {
         switch (route) {
           case 'dashboard':
-            return const DashboardScreen();
+            return DashboardScreen(
+              onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
+            );
           case 'sales':
             return const SalesListScreen();
           case 'inventory':
@@ -56,17 +59,27 @@ class _HomeShellState extends ConsumerState<HomeShell> {
     final isAdmin = user?.isAdmin ?? false;
     final index = _index < _routes.length ? _index : _routes.length - 1;
 
-    return Scaffold(
-      body: IndexedStack(
-        index: index,
-        children: [for (final route in _routes) _screenFor(route)],
-      ),
-      drawer: _buildDrawer(context, isAdmin),
-      bottomNavigationBar: _PremiumBottomNav(
-        currentIndex: index,
-        routes: _routes,
-        onTap: (i) => setState(() => _index = i),
-      ),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Showroom backdrop so the admin dashboard image shows through
+        // behind the bottom navigation bar on every tab.
+        const _ShellBackdrop(),
+        Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: Colors.transparent,
+          body: IndexedStack(
+            index: index,
+            children: [for (final route in _routes) _screenFor(route)],
+          ),
+          drawer: _buildDrawer(context, isAdmin),
+          bottomNavigationBar: _PremiumBottomNav(
+            currentIndex: index,
+            routes: _routes,
+            onTap: (i) => setState(() => _index = i),
+          ),
+        ),
+      ],
     );
   }
 
@@ -229,6 +242,37 @@ class _DrawerSection extends StatelessWidget {
   }
 }
 
+class _ShellBackdrop extends StatelessWidget {
+  const _ShellBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'lib/images/admin_dashboard.jfif',
+          fit: BoxFit.cover,
+        ),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0x50050505),
+                Color(0x99050505),
+                Color(0xB8050505),
+              ],
+              stops: [0, 0.55, 1],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _PremiumBottomNav extends StatelessWidget {
   const _PremiumBottomNav({required this.currentIndex, required this.routes, required this.onTap});
 
@@ -255,8 +299,8 @@ class _PremiumBottomNav extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: isDark
-              ? Colors.black.withValues(alpha: 0.58)
-              : Colors.white.withValues(alpha: 0.6),
+              ? Colors.black.withValues(alpha: 0.28)
+              : Colors.white.withValues(alpha: 0.35),
           borderRadius: BorderRadius.circular(28),
           border: Border.all(
             color: AppColors.gold.withValues(alpha: isDark ? 0.42 : 0.30),

@@ -30,7 +30,10 @@ const _goldDark = Color(0xFFB8860B);
 const _bg = Color(0xFF0B0B0F);
 
 class DashboardScreen extends ConsumerWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.onOpenDrawer});
+
+  /// Opens the app sidebar (drawer) from the HomeShell scaffold.
+  final VoidCallback? onOpenDrawer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,7 +107,7 @@ class DashboardScreen extends ConsumerWidget {
   List<Widget> _buildAdminChildren(
       BuildContext context, WidgetRef ref, DashboardData data, User? user) {
     return [
-      _LuxHeader(user: user, isAdmin: true),
+      _LuxHeader(user: user, isAdmin: true, onOpenDrawer: onOpenDrawer),
       const SizedBox(height: 24),
       _RevenueCard(data: data),
       const SizedBox(height: 22),
@@ -184,7 +187,7 @@ class DashboardScreen extends ConsumerWidget {
 
   List<Widget> _buildManagerChildren(BuildContext context, DashboardData data, User? user) {
     return [
-      _LuxHeader(user: user, isAdmin: false),
+      _LuxHeader(user: user, isAdmin: false, onOpenDrawer: onOpenDrawer),
       const SizedBox(height: 24),
       _ManagerStatGrid(cards: data.cards),
       const SizedBox(height: 22),
@@ -302,10 +305,11 @@ class _Glow extends StatelessWidget {
 // ------------------------------------------------------------------ header --
 
 class _LuxHeader extends ConsumerWidget {
-  const _LuxHeader({required this.user, required this.isAdmin});
+  const _LuxHeader({required this.user, required this.isAdmin, this.onOpenDrawer});
 
   final User? user;
   final bool isAdmin;
+  final VoidCallback? onOpenDrawer;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -355,9 +359,16 @@ class _LuxHeader extends ConsumerWidget {
             const SizedBox(width: 6),
             InkWell(
               customBorder: const CircleBorder(),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              ),
+              onTap: () {
+                final open = onOpenDrawer;
+                if (open != null) {
+                  open();
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                }
+              },
               child: _Avatar(initial: (user?.name ?? 'M').characters.first),
             ),
           ],
