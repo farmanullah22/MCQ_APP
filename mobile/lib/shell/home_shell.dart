@@ -291,43 +291,37 @@ class _PremiumBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(14, 0, 14, 12),
       child: Container(
-        height: 74,
+        height: 72,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: AppColors.gold.withValues(alpha: 0.5),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.6),
-              blurRadius: 30,
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 26,
               offset: const Offset(0, 14),
             ),
             BoxShadow(
               color: AppColors.gold.withValues(alpha: 0.16),
-              blurRadius: 24,
-              spreadRadius: -4,
+              blurRadius: 22,
+              spreadRadius: -6,
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+            filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: isDark
-                      ? const [Color(0xE6121016), Color(0xDD0D0C11)]
-                      : const [Color(0xF2FBF7EC), Color(0xE6F1EADB)],
-                ),
+                color: const Color(0x1FFFFFFF),
+                borderRadius: BorderRadius.circular(24),
               ),
               child: Row(
                 children: List.generate(routes.length, (i) {
@@ -368,10 +362,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final idleColor = isDark ? const Color(0xFFE3DBC9) : AppColors.textSecondary;
+    final idleColor = AppColors.goldLight;
     return InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -386,7 +379,7 @@ class _NavItem extends StatelessWidget {
               height: selected ? 32 : 28,
               decoration: BoxDecoration(
                 gradient: selected ? AppColors.goldGradient : null,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: selected
                     ? [
                         BoxShadow(
@@ -414,7 +407,7 @@ class _NavItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 9.5,
               fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              color: selected ? AppColors.gold : idleColor,
+              color: selected ? AppColors.gold : idleColor.withValues(alpha: 0.85),
             ),
             child: Text(label),
           ),
