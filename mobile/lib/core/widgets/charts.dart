@@ -114,10 +114,14 @@ class LineSalesChart extends StatelessWidget {
     super.key,
     required this.points,
     this.showExpenses = true,
+    this.lineColor,
+    this.expenseColor,
   });
 
   final List<ChartPoint> points;
   final bool showExpenses;
+  final Color? lineColor;
+  final Color? expenseColor;
 
   @override
   Widget build(BuildContext context) {
@@ -195,12 +199,12 @@ class LineSalesChart extends StatelessWidget {
             spots: salesSpots,
             isCurved: true,
             curveSmoothness: 0.35,
-            color: AppColors.primary,
+            color: lineColor ?? AppColors.primary,
             barWidth: 3,
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: AppColors.primary.withValues(alpha: 0.12),
+              color: (lineColor ?? AppColors.primary).withValues(alpha: 0.12),
             ),
           ),
           if (showExpenses)
@@ -208,7 +212,7 @@ class LineSalesChart extends StatelessWidget {
               spots: expenseSpots,
               isCurved: true,
               curveSmoothness: 0.35,
-              color: AppColors.warning,
+              color: expenseColor ?? AppColors.warning,
               barWidth: 2.5,
               dotData: const FlDotData(show: false),
             ),

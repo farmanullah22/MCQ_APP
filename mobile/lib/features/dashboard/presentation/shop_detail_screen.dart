@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/activity_timeline.dart';
 import '../../../core/widgets/charts.dart';
-import '../../../core/widgets/dashboard_hero_slider.dart';
-import '../../../core/widgets/section_header.dart';
-import '../../../core/widgets/stat_card.dart';
-import '../../../core/widgets/status_views.dart';
+import '../../../core/widgets/lux_widgets.dart';
 import '../models/dashboard_data.dart';
 import '../providers/dashboard_providers.dart';
+
+const _gold = Color(0xFFD4AF37);
+const _goldLight = Color(0xFFF7D488);
+const _goldDark = Color(0xFFB8860B);
+const _bg = Color(0xFF0B0B0F);
 
 class ShopDetailScreen extends ConsumerWidget {
   const ShopDetailScreen({
@@ -32,236 +35,341 @@ class ShopDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final async = ref.watch(shopDetailProvider(shopId));
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: isDark ? AppGradients.bgDark.colors.first : AppGradients.bg.colors.first,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        title: Text(shopName ?? 'Shop Details'),
-        actions: [
-          IconButton(
-            tooltip: 'Refresh',
-            onPressed: () => ref.refresh(shopDetailProvider(shopId)),
-            icon: const Icon(Icons.refresh),
+      backgroundColor: _bg,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ShowroomBackground(),
+          SafeArea(
+            child: async.when(
+              loading: () => const LuxLoadingView(message: 'Loading branch...'),
+              error: (e, st) => LuxErrorView(
+                message: e.toString(),
+                onRetry: () => ref.refresh(shopDetailProvider(shopId)),
+              ),
+              data: (data) {
+                final name = shopName ?? 'Shop';
+                return RefreshIndicator(
+                  color: _gold,
+                  backgroundColor: const Color(0xFF16141B),
+                  onRefresh: () async {
+                    ref.invalidate(shopDetailProvider(shopId));
+                    await ref.read(shopDetailProvider(shopId).future);
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(18, 8, 18, 40),
+                    children: [
+                      _ShopTopBar(
+                        onRefresh: () => ref.refresh(shopDetailProvider(shopId)),
+                      ),
+                      const SizedBox(height: 16),
+                      _ShopTitle(name: name, manager: manager),
+                      const SizedBox(height: 18),
+                      _ShopMetricsRow(
+                        revenue: revenue ?? data.cards.monthlyRevenue,
+                        profit: profit ?? data.cards.monthlyProfit,
+                        saleCount: saleCount ?? data.cards.salesTodayCount,
+                      ),
+                      const SizedBox(height: 26),
+                      const LuxSectionTitle(
+                        title: 'Overview',
+                        subtitle: 'Key metrics for this branch',
+                      ),
+                      const SizedBox(height: 12),
+                      _ShopStatsGrid(cards: data.cards),
+                      if (data.daily.isNotEmpty) ...[
+                        const SizedBox(height: 26),
+                        const LuxSectionTitle(
+                          title: 'Daily Sales',
+                          subtitle: 'Last 14 days',
+                        ),
+                        const SizedBox(height: 12),
+                        LuxGlassCard(
+                          child: SizedBox(
+                            height: 200,
+                            child: LineSalesChart(
+                              points: data.daily,
+                              lineColor: _gold,
+                              expenseColor: AppColors.premiumRedLight,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (data.monthly.isNotEmpty) ...[
+                        const SizedBox(height: 26),
+                        const LuxSectionTitle(
+                          title: 'Monthly Revenue & Profit',
+                          subtitle: 'Last 12 months',
+                        ),
+                        const SizedBox(height: 12),
+                        LuxGlassCard(
+                          child: SizedBox(
+                            height: 200,
+                            child: LineSalesChart(
+                              points: data.monthly,
+                              showExpenses: false,
+                              lineColor: _gold,
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (data.expenseBreakdown.isNotEmpty) ...[
+                        const SizedBox(height: 26),
+                        const LuxSectionTitle(
+                          title: 'Expense Breakdown',
+                          subtitle: 'Last 30 days',
+                        ),
+                        const SizedBox(height: 12),
+                        LuxGlassCard(
+                          child: SizedBox(
+                            height: 220,
+                            child: PieChartWidget(
+                              sections: data.expenseBreakdown
+                                  .map((e) => (label: e.category, value: e.total))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (data.topProducts.isNotEmpty) ...[
+                        const SizedBox(height: 26),
+                        const LuxSectionTitle(
+                          title: 'Top Products',
+                          subtitle: 'Best sellers in this branch',
+                        ),
+                        const SizedBox(height: 12),
+                        _TopProductsCard(products: data.topProducts),
+                      ],
+                      if (data.recentActivity.isNotEmpty) ...[
+                        const SizedBox(height: 26),
+                        const LuxSectionTitle(
+                          title: 'Recent Activity',
+                          subtitle: 'Latest changes in this branch',
+                        ),
+                        const SizedBox(height: 12),
+                        LuxGlassCard(
+                          child: ActivityTimeline(items: data.recentActivity),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
-      ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: isDark ? AppGradients.bgDark : AppGradients.bg,
-        ),
-        child: async.when(
-          loading: () => const LoadingView(),
-          error: (e, st) => ErrorView(
-            message: e.toString(),
-            onRetry: () => ref.refresh(shopDetailProvider(shopId)),
-          ),
-          data: (data) {
-            final name = shopName ?? 'Shop';
-            return RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(shopDetailProvider(shopId));
-                await ref.read(shopDetailProvider(shopId).future);
-              },
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                children: [
-                  _ShopHeader(
-                    name: name,
-                    manager: manager,
-                    revenue: revenue ?? data.cards.monthlyRevenue,
-                    profit: profit ?? data.cards.monthlyProfit,
-                    saleCount: saleCount ?? data.cards.salesTodayCount,
-                  ),
-                  const SizedBox(height: 16),
-                  SectionHeader(
-                    title: 'Overview',
-                    subtitle: 'Key metrics for $name',
-                  ),
-                  _ShopStatsGrid(cards: data.cards),
-                  if (data.daily.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    ChartCard(
-                      title: 'Daily Sales',
-                      subtitle: 'Last 14 days',
-                      height: 200,
-                      child: LineSalesChart(points: data.daily),
-                    ),
-                  ],
-                  if (data.monthly.isNotEmpty) ...[
-                    ChartCard(
-                      title: 'Monthly Revenue & Profit',
-                      subtitle: 'Last 12 months',
-                      height: 200,
-                      child: LineSalesChart(points: data.monthly, showExpenses: false),
-                    ),
-                  ],
-                  if (data.expenseBreakdown.isNotEmpty) ...[
-                    ChartCard(
-                      title: 'Expense Breakdown',
-                      subtitle: 'Last 30 days',
-                      height: 220,
-                      child: PieChartWidget(
-                        sections: data.expenseBreakdown
-                            .map((e) => (label: e.category, value: e.total))
-                            .toList(),
-                      ),
-                    ),
-                  ],
-                  if (data.topProducts.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    SectionHeader(title: 'Top Products', subtitle: 'Best sellers in this shop'),
-                    _TopProductsCard(products: data.topProducts),
-                  ],
-                  if (data.recentActivity.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    SectionHeader(title: 'Recent Activity', subtitle: 'Latest changes in this shop'),
-                    _ActivityCard(items: data.recentActivity),
-                  ],
-                ],
-              ),
-            );
-          },
-        ),
       ),
     );
   }
 }
 
-class _ShopHeader extends StatelessWidget {
-  const _ShopHeader({
-    required this.name,
-    this.manager,
-    required this.revenue,
-    required this.profit,
-    required this.saleCount,
-  });
+class _ShopTopBar extends StatelessWidget {
+  const _ShopTopBar({required this.onRefresh});
 
-  final String name;
-  final String? manager;
-  final double revenue;
-  final double profit;
-  final int saleCount;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: AppColors.emeraldGradient,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.30),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(11),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14),
+    return Row(
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.of(context).maybePop(),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0x1FFFFFFF),
+              borderRadius: BorderRadius.circular(21),
+              border: Border.all(color: _gold.withValues(alpha: 0.4)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
                 ),
-                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 22),
+              ],
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: _goldLight,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'MUALLIM CARPETS',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2.2,
+                  color: _gold,
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    if (manager != null)
-                      Text(
-                        'Manager: $manager',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
+              Text(
+                'BRANCH OVERVIEW',
+                style: GoogleFonts.poppins(
+                  fontSize: 8,
+                  letterSpacing: 1.6,
+                  color: Colors.white.withValues(alpha: 0.38),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _HeaderMetric(
-                  label: 'Total Revenue',
-                  value: Formatters.compact(revenue),
-                ),
-              ),
-              Expanded(
-                child: _HeaderMetric(
-                  label: 'Total Profit',
-                  value: Formatters.compact(profit),
-                ),
-              ),
-              Expanded(
-                child: _HeaderMetric(
-                  label: 'Total Sales',
-                  value: '$saleCount',
-                ),
-              ),
-            ],
+        ),
+        IconButton(
+          tooltip: 'Refresh',
+          onPressed: onRefresh,
+          icon: Icon(
+            Icons.refresh_rounded,
+            color: Colors.white.withValues(alpha: 0.7),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _HeaderMetric extends StatelessWidget {
-  const _HeaderMetric({required this.label, required this.value});
+class _ShopTitle extends StatelessWidget {
+  const _ShopTitle({required this.name, this.manager});
 
-  final String label;
-  final String value;
+  final String name;
+  final String? manager;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.75),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.6,
+        Row(
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(color: _gold, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: LuxGoldGradientText(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (manager != null && manager!.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Manager  ·  $manager',
+            style: GoogleFonts.poppins(
+              fontSize: 12.5,
+              color: Colors.white.withValues(alpha: 0.55),
+            ),
+          ),
+        ],
+        const SizedBox(height: 14),
+        const LuxGoldDivider(),
+      ],
+    );
+  }
+}
+
+class _ShopMetricsRow extends StatelessWidget {
+  const _ShopMetricsRow({
+    required this.revenue,
+    required this.profit,
+    required this.saleCount,
+  });
+
+  final double revenue;
+  final double profit;
+  final int saleCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _MetricTile(
+            label: 'REVENUE',
+            value: Formatters.compact(revenue),
+            glow: true,
           ),
         ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
+        const SizedBox(width: 12),
+        Expanded(
+          child: _MetricTile(
+            label: 'PROFIT',
+            value: Formatters.compact(profit),
           ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _MetricTile(label: 'SALES', value: '$saleCount'),
         ),
       ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    this.glow = false,
+  });
+
+  final String label;
+  final String value;
+  final bool glow;
+
+  @override
+  Widget build(BuildContext context) {
+    return LuxGlassCard(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      glow: glow,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 8.5,
+              letterSpacing: 0.9,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: _goldLight,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -274,39 +382,34 @@ class _ShopStatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stats = <Widget>[
-      StatCard(
+      _ShopStatTile(
+        icon: Icons.point_of_sale_rounded,
         title: 'Sales Today',
         value: cards.salesToday,
-        icon: Icons.point_of_sale_rounded,
-        color: AppColors.primary,
         subtitle: '${cards.salesTodayCount} transactions',
       ),
-      StatCard(
+      _ShopStatTile(
+        icon: Icons.payments_outlined,
         title: 'Monthly Revenue',
         value: cards.monthlyRevenue,
-        icon: Icons.payments_outlined,
-        color: AppColors.success,
         subtitle: 'Profit ${Formatters.compact(cards.monthlyProfit)}',
       ),
-      StatCard(
+      _ShopStatTile(
+        icon: Icons.account_balance_wallet_outlined,
         title: 'Monthly Expenses',
         value: cards.monthlyExpenses,
-        icon: Icons.account_balance_wallet_outlined,
-        color: AppColors.danger,
       ),
-      StatCard(
+      _ShopStatTile(
+        icon: Icons.inventory_2_outlined,
         title: 'Total Products',
         value: cards.totalProducts,
-        icon: Icons.inventory_2_outlined,
-        color: AppColors.info,
-        valueType: StatValueType.number,
+        number: true,
         subtitle: cards.lowStockCount > 0 ? '${cards.lowStockCount} low on stock' : 'fully stocked',
       ),
-      StatCard(
+      _ShopStatTile(
+        icon: Icons.savings_outlined,
         title: 'Stock Value',
         value: cards.totalStockValue,
-        icon: Icons.savings_outlined,
-        color: AppColors.secondary,
       ),
     ];
 
@@ -323,6 +426,89 @@ class _ShopStatsGrid extends StatelessWidget {
   }
 }
 
+class _ShopStatTile extends StatelessWidget {
+  const _ShopStatTile({
+    required this.icon,
+    required this.title,
+    required this.value,
+    this.subtitle,
+    this.number = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final num value;
+  final String? subtitle;
+  final bool number;
+
+  @override
+  Widget build(BuildContext context) {
+    return LuxGlassCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [_goldLight, _gold, _goldDark],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: _gold.withValues(alpha: 0.32),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 19, color: const Color(0xFF17151C)),
+          ),
+          const SizedBox(height: 12),
+          LuxGoldGradientText(
+            child: LuxAnimatedNumber(
+              value: value,
+              currency: !number,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.5),
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: _goldLight.withValues(alpha: 0.8),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _TopProductsCard extends StatelessWidget {
   const _TopProductsCard({required this.products});
 
@@ -330,16 +516,8 @@ class _TopProductsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
+    return LuxGlassCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color ?? theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.brightness == Brightness.dark ? const Color(0xFF1B2926) : const Color(0xFFE2EDEA),
-        ),
-      ),
       child: Column(
         children: products.indexed.map((e) {
           final product = e.$2;
@@ -352,12 +530,20 @@ class _TopProductsCard extends StatelessWidget {
                   height: 30,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    gradient: AppColors.goldGradient,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [_goldLight, _gold, _goldDark],
+                    ),
                     borderRadius: BorderRadius.circular(9),
                   ),
                   child: Text(
                     '${e.$1 + 1}',
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      color: Color(0xFF17151C),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -369,46 +555,35 @@ class _TopProductsCard extends StatelessWidget {
                         product.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
                       ),
                       Text(
                         '${product.quantity} sold',
-                        style: theme.textTheme.bodySmall,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.45),
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Text(
                   Formatters.compact(product.revenue),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary),
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: _goldLight,
+                  ),
                 ),
               ],
             ),
           );
         }).toList(),
       ),
-    );
-  }
-}
-
-class _ActivityCard extends StatelessWidget {
-  const _ActivityCard({required this.items});
-
-  final List<ActivityItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color ?? theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: theme.brightness == Brightness.dark ? const Color(0xFF1B2926) : const Color(0xFFE2EDEA),
-        ),
-      ),
-      child: ActivityTimeline(items: items),
     );
   }
 }
