@@ -1,7 +1,6 @@
 ﻿import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,7 +9,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/activity_timeline.dart';
 import '../../../core/widgets/carpet_pattern.dart';
-import '../../audit/presentation/audit_logs_screen.dart';
 import '../../auth/models/user.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
@@ -75,12 +73,6 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  void _push(BuildContext context, WidgetRef ref, Widget screen) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => screen))
-        .then((_) => ref.read(dashboardControllerProvider.notifier).refresh());
-  }
-
   void _openShop(BuildContext context, ShopComparison shop) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -113,54 +105,19 @@ class DashboardScreen extends ConsumerWidget {
         _RevenueCard(data: data)
       else
         _BranchSlider(branches: data.comparison, onOpen: (c) => _openShop(context, c)),
-      const SizedBox(height: 22),
-      _StatGrid(cards: data.cards),
-      const SizedBox(height: 22),
-      _InventorySummaryCard(data: data),
-      const SizedBox(height: 28),
-      const _SectionTitle(
-        title: 'Sales Trends',
-        subtitle: 'Performance over time',
-      ),
-      const SizedBox(height: 12),
-      _ChartCard(
-        title: 'Daily Sales',
-        subtitle: 'Last 14 days',
-        child: _WeeklyBarChart(data: data.daily),
-      ),
-      const SizedBox(height: 14),
-      _WeeklySalesCard(data: data.weekly),
-      const SizedBox(height: 14),
-      _MonthlyProfitCard(data: data.monthly),
-      const SizedBox(height: 14),
-      _ChartCard(
-        title: 'Yearly Sales',
-        subtitle: 'Last 5 years',
-        child: _WeeklyBarChart(data: data.yearly),
-      ),
-      const SizedBox(height: 28),
-      const _SectionTitle(
-        title: 'Top Products',
-        subtitle: 'Best sellers by revenue',
-      ),
-      const SizedBox(height: 12),
-      _TopProductsCard(items: data.topProducts),
-      const SizedBox(height: 28),
-      const _SectionTitle(
-        title: 'Top Customers',
-        subtitle: 'Highest spenders across showrooms',
-      ),
-      const SizedBox(height: 12),
-      _TopCustomersCard(items: data.topCustomers),
-      const SizedBox(height: 28),
-      _SectionTitle(
-        title: 'Manager Logs',
-        subtitle: 'Recent activity across branches',
-        actionLabel: 'View All',
-        action: () => _push(context, ref, const AuditLogsScreen()),
-      ),
-      const SizedBox(height: 12),
-      _ActivityCard(items: data.recentActivity),
+      if (data.comparison.isNotEmpty) ...[
+        const SizedBox(height: 26),
+        const _SectionTitle(
+          title: 'Branches',
+          subtitle: 'Tap a branch to open its dashboard',
+        ),
+        const SizedBox(height: 12),
+        for (final branch in data.comparison)
+          _BranchQuickCard(
+            branch: branch,
+            onOpen: () => _openShop(context, branch),
+          ),
+      ],
     ];
   }
 
@@ -757,57 +714,6 @@ class _SparklinePainter extends CustomPainter {
       oldDelegate.progress != progress || oldDelegate.values != values;
 }
 
-// --------------------------------------------------------------- stat grid --
-
-class _StatGrid extends StatelessWidget {
-  const _StatGrid({required this.cards});
-
-  final DashboardCards cards;
-
-  @override
-  Widget build(BuildContext context) {
-    final tiles = <Widget>[
-      _StatTile(
-        title: 'Revenue',
-        value: cards.monthlyRevenue,
-        icon: Icons.payments_outlined,
-        subtitle: '${Formatters.compact(cards.yearlyRevenue)} this year',
-      ),
-      _StatTile(
-        title: 'Profit',
-        value: cards.monthlyProfit,
-        icon: Icons.trending_up_rounded,
-        subtitle: '${Formatters.compact(cards.yearlyProfit)} this year',
-      ),
-      _StatTile(
-        title: 'Sales',
-        value: cards.salesToday,
-        icon: Icons.point_of_sale_rounded,
-        subtitle: '${cards.salesTodayCount} transactions today',
-      ),
-      _StatTile(
-        title: 'Expenses',
-        value: cards.monthlyExpenses,
-        icon: Icons.account_balance_wallet_outlined,
-        subtitle: '${Formatters.compact(cards.expensesToday)} spent today',
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = (constraints.maxWidth - 12) / 2;
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: tiles
-              .map((w) => SizedBox(width: width, child: w))
-              .toList(),
-        );
-      },
-    );
-  }
-}
-
 class _StatTile extends StatelessWidget {
   const _StatTile({
     required this.title,
@@ -892,226 +798,6 @@ class _StatTile extends StatelessWidget {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-// ------------------------------------------------------------ inventory summary --
-
-class _InventorySummaryCard extends StatelessWidget {
-  const _InventorySummaryCard({required this.data});
-
-  final DashboardData data;
-
-  @override
-  Widget build(BuildContext context) {
-    final cards = data.cards;
-    return _GlassCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_goldLight, _gold, _goldDark],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _gold.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  size: 18,
-                  color: Color(0xFF17151C),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Inventory Summary',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _SummaryMetric(label: 'Products', value: Formatters.number(cards.totalProducts)),
-              _SummaryMetric(label: 'Stock Value', value: Formatters.compact(cards.totalStockValue)),
-              _SummaryMetric(
-                label: 'Low Stock',
-                value: '${cards.lowStockCount}',
-                warn: cards.lowStockCount > 0,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryMetric extends StatelessWidget {
-  const _SummaryMetric({required this.label, required this.value, this.warn = false});
-
-  final String label;
-  final String value;
-  final bool warn;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: GoogleFonts.poppins(
-              fontSize: 9,
-              letterSpacing: 0.9,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.4),
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: warn ? AppColors.premiumRedLight : Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// -------------------------------------------------------------- top customers --
-
-class _TopCustomersCard extends StatelessWidget {
-  const _TopCustomersCard({required this.items});
-
-  final List<TopCustomer> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: const EdgeInsets.all(16),
-      child: items.isEmpty
-          ? const _EmptyNote('No customer data yet')
-          : Column(
-              children: items
-                  .take(5)
-                  .indexed
-                  .map((e) => _CustomerRow(index: e.$1, customer: e.$2))
-                  .toList(),
-            ),
-    );
-  }
-}
-
-class _CustomerRow extends StatelessWidget {
-  const _CustomerRow({required this.index, required this.customer});
-
-  final int index;
-  final TopCustomer customer;
-
-  @override
-  Widget build(BuildContext context) {
-    final rankColor = index == 0
-        ? const [_goldLight, _gold, _goldDark]
-        : index == 1
-            ? [const Color(0xFFD8D8D8), const Color(0xFF9A9A9A)]
-            : [const Color(0xFFE0B884), const Color(0xFFA87B48)];
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              gradient: index < 3
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: rankColor,
-                    )
-                  : null,
-              color: index < 3 ? null : Colors.white.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${index + 1}',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: index < 3
-                    ? const Color(0xFF17151C)
-                    : Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  customer.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  customer.phone.isEmpty
-                      ? '${customer.orders} orders'
-                      : '${customer.phone} · ${customer.orders} orders',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            Formatters.compact(customer.total),
-            style: GoogleFonts.poppins(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-              color: _goldLight,
-            ),
-          ),
         ],
       ),
     );
@@ -1763,6 +1449,125 @@ class _BranchMetric extends StatelessWidget {
   }
 }
 
+// --------------------------------------------------------------- branch list --
+
+class _BranchQuickCard extends StatelessWidget {
+  const _BranchQuickCard({required this.branch, required this.onOpen});
+
+  final ShopComparison branch;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = branch.shopName ?? 'Branch';
+    final manager = branch.manager ?? '';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _GlassCard(
+        padding: EdgeInsets.zero,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: onOpen,
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [_goldLight, _gold, _goldDark],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _gold.withValues(alpha: 0.32),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.storefront_rounded,
+                      size: 22,
+                      color: Color(0xFF17151C),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        if (manager.isNotEmpty) ...[
+                          const SizedBox(height: 3),
+                          Text(
+                            manager,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'REVENUE',
+                        style: GoogleFonts.poppins(
+                          fontSize: 8.5,
+                          letterSpacing: 0.9,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        Formatters.compact(branch.sales),
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: _goldLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: Colors.white.withValues(alpha: 0.35),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------- quick actions --
 
 class _QuickActions extends ConsumerWidget {
@@ -1864,467 +1669,6 @@ class _QuickActions extends ConsumerWidget {
             ),
           )
           .toList(),
-    );
-  }
-}
-
-// -------------------------------------------------------------- analytics --
-
-class _WeeklySalesCard extends StatelessWidget {
-  const _WeeklySalesCard({required this.data});
-
-  final List<ChartPoint> data;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ChartCard(
-      title: 'Weekly Sales',
-      subtitle: 'Sales by day this week',
-      child: _WeeklyBarChart(data: data),
-    );
-  }
-}
-
-class _MonthlyProfitCard extends StatelessWidget {
-  const _MonthlyProfitCard({required this.data});
-
-  final List<ChartPoint> data;
-
-  @override
-  Widget build(BuildContext context) {
-    return _ChartCard(
-      title: 'Monthly Profit',
-      subtitle: 'Profit trend over the year',
-      child: _ProfitLineChart(data: data),
-    );
-  }
-}
-
-class _ChartCard extends StatelessWidget {
-  const _ChartCard({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 26,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [_goldLight, _goldDark],
-                  ),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.5,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          SizedBox(height: 190, child: child),
-        ],
-      ),
-    );
-  }
-}
-
-const _chartAxisStyle = TextStyle(
-  fontSize: 9.5,
-  color: Color(0x99FFFFFF),
-);
-
-const _chartGridLine = FlLine(
-  color: Color(0x14FFFFFF),
-  strokeWidth: 1,
-);
-
-class _WeeklyBarChart extends StatelessWidget {
-  const _WeeklyBarChart({required this.data});
-
-  final List<ChartPoint> data;
-
-  @override
-  Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return const _EmptyNote('No weekly data yet');
-    }
-    final maxY = data.fold<double>(0, (a, p) => p.sales > a ? p.sales : a);
-
-    return BarChart(
-      BarChartData(
-        maxY: maxY == 0 ? 100 : maxY * 1.18,
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: (maxY / 4).clamp(1, double.infinity),
-          getDrawingHorizontalLine: (_) => _chartGridLine,
-        ),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 38,
-              getTitlesWidget: (v, meta) => SideTitleWidget(
-                meta: meta,
-                space: 6,
-                child: Text(_axisLabel(v), style: _chartAxisStyle),
-              ),
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 24,
-              interval: (data.length / 6).ceilToDouble().clamp(1, double.infinity),
-              getTitlesWidget: (v, meta) {
-                final idx = v.round();
-                if (idx < 0 || idx >= data.length) return const SizedBox.shrink();
-                return SideTitleWidget(
-                  meta: meta,
-                  child: Text(data[idx].label, style: _chartAxisStyle),
-                );
-              },
-            ),
-          ),
-        ),
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) => const Color(0xFF232028),
-            getTooltipItem: (group, groupIndex, rod, rodIndex) =>
-                BarTooltipItem(
-              '${data[group.x.round()].label}\n${Formatters.compact(rod.toY)}',
-              const TextStyle(
-                color: _goldLight,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-        barGroups: data.indexed
-            .map(
-              (e) => BarChartGroupData(
-                x: e.$1,
-                barRods: [
-                  BarChartRodData(
-                    toY: e.$2.sales,
-                    width: 12,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(4),
-                    ),
-                    gradient: const LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [_goldDark, _goldLight],
-                    ),
-                  ),
-                ],
-              ),
-            )
-            .toList(),
-      ),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeOut,
-    );
-  }
-}
-
-class _ProfitLineChart extends StatelessWidget {
-  const _ProfitLineChart({required this.data});
-
-  final List<ChartPoint> data;
-
-  @override
-  Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return const _EmptyNote('No monthly data yet');
-    }
-    final spots = data.indexed
-        .map((e) => FlSpot(e.$1.toDouble(), e.$2.profit))
-        .toList();
-    final maxY = data.fold<double>(0, (a, p) => p.profit > a ? p.profit : a);
-
-    return LineChart(
-      LineChartData(
-        minY: 0,
-        maxY: maxY == 0 ? 100 : maxY * 1.18,
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          horizontalInterval: (maxY / 4).clamp(1, double.infinity),
-          getDrawingHorizontalLine: (_) => _chartGridLine,
-        ),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 38,
-              getTitlesWidget: (v, meta) => SideTitleWidget(
-                meta: meta,
-                space: 6,
-                child: Text(_axisLabel(v), style: _chartAxisStyle),
-              ),
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 24,
-              interval: (data.length / 6).ceilToDouble().clamp(1, double.infinity),
-              getTitlesWidget: (v, meta) {
-                final idx = v.round();
-                if (idx < 0 || idx >= data.length) return const SizedBox.shrink();
-                return SideTitleWidget(
-                  meta: meta,
-                  child: Text(data[idx].label, style: _chartAxisStyle),
-                );
-              },
-            ),
-          ),
-        ),
-        lineTouchData: LineTouchData(
-          touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => const Color(0xFF232028),
-            getTooltipItems: (touched) => touched
-                .map(
-                  (s) => LineTooltipItem(
-                    '${data[s.x.round()].label}\n${Formatters.compact(s.y)}',
-                    const TextStyle(
-                      color: _goldLight,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            curveSmoothness: 0.35,
-            barWidth: 3,
-            dotData: const FlDotData(show: false),
-            gradient: const LinearGradient(
-              colors: [_goldLight, _gold, _goldDark],
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  _gold.withValues(alpha: 0.32),
-                  _gold.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.easeOut,
-    );
-  }
-}
-
-String _axisLabel(double value) =>
-    value >= 1000 ? '${(value / 1000).round()}k' : '${value.round()}';
-
-class _TopProductsCard extends StatelessWidget {
-  const _TopProductsCard({required this.items});
-
-  final List<TopProduct> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return _GlassCard(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 26,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [_goldLight, _goldDark],
-                  ),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Top Products',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 16.5,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    'Best sellers by revenue',
-                    style: GoogleFonts.poppins(
-                      fontSize: 10.5,
-                      color: Colors.white.withValues(alpha: 0.45),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          if (items.isEmpty)
-            const _EmptyNote('No top products yet')
-          else
-            ...items.take(5).indexed.map(
-                  (e) => _ProductRow(index: e.$1, product: e.$2),
-                ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProductRow extends StatelessWidget {
-  const _ProductRow({required this.index, required this.product});
-
-  final int index;
-  final TopProduct product;
-
-  @override
-  Widget build(BuildContext context) {
-    final isPodium = index < 3;
-    final rankColor = index == 0
-        ? const [_goldLight, _gold, _goldDark]
-        : index == 1
-            ? [const Color(0xFFD8D8D8), const Color(0xFF9A9A9A)]
-            : [const Color(0xFFE0B884), const Color(0xFFA87B48)];
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 26,
-            height: 26,
-            decoration: BoxDecoration(
-              gradient: isPodium
-                  ? LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: rankColor,
-                    )
-                  : null,
-              color: isPodium ? null : Colors.white.withValues(alpha: 0.08),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              '${index + 1}',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: isPodium
-                    ? const Color(0xFF17151C)
-                    : Colors.white.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  '${product.quantity} sold',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: Colors.white.withValues(alpha: 0.4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            Formatters.compact(product.revenue),
-            style: GoogleFonts.poppins(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w800,
-              color: _goldLight,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
