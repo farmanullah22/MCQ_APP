@@ -15,8 +15,13 @@ const listAuditLogs = asyncHandler(async (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 30;
   const filter = {};
 
+  // Managers only see activity from their own shop, regardless of query params.
+  if (req.user && req.user.role === 'manager') {
+    filter.shopId = req.user.assignedShop._id;
+  } else if (req.query.shopId) {
+    filter.shopId = req.query.shopId;
+  }
   if (req.query.userId) filter.performedBy = req.query.userId;
-  if (req.query.shopId) filter.shopId = req.query.shopId;
   if (req.query.actionType) filter.actionType = req.query.actionType;
   if (req.query.module) filter.module = req.query.module;
   if (req.query.status) filter.status = req.query.status;

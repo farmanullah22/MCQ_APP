@@ -55,9 +55,14 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
             children: [
               DropdownButtonFormField<String>(
                 initialValue: _productId,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Product', prefixIcon: Icon(Icons.carpenter_outlined)),
                 items: products
-                    .map((p) => DropdownMenuItem(value: (p as dynamic).id.toString(), child: Text('${p.name} (${p.quantity} in stock)')))
+                    .map((p) => DropdownMenuItem(
+                          value: (p as dynamic).id.toString(),
+                          child: Text('${p.name} (${p.quantity} in stock)',
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ))
                     .toList(),
                 onChanged: (v) => setState(() => _productId = v),
                 validator: (v) => v == null ? 'Select a product' : null,
@@ -155,9 +160,14 @@ class _StockOutScreenState extends ConsumerState<StockOutScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               DropdownButtonFormField<String>(
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Product', prefixIcon: Icon(Icons.carpenter_outlined)),
                 items: products
-                    .map((p) => DropdownMenuItem(value: (p as dynamic).id.toString(), child: Text('${p.name} (${p.quantity} in stock)')))
+                    .map((p) => DropdownMenuItem(
+                          value: (p as dynamic).id.toString(),
+                          child: Text('${p.name} (${p.quantity} in stock)',
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ))
                     .toList(),
                 onChanged: (v) => setState(() => _productId = v),
                 validator: (v) => v == null ? 'Select a product' : null,
@@ -257,6 +267,119 @@ class LowStockScreen extends ConsumerWidget {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class StockTransferScreen extends ConsumerStatefulWidget {
+  const StockTransferScreen({super.key});
+
+  @override
+  ConsumerState<StockTransferScreen> createState() => _StockTransferScreenState();
+}
+
+class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _quantityController = TextEditingController();
+  final _notesController = TextEditingController();
+  String? _fromProductId;
+  String? _toProductId;
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loading = ref.watch(stockMutationControllerProvider.select((s) => s.loading));
+    final products = ref.watch(productListControllerProvider).data.value?.products ?? const <Product>[];
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Stock Transfer')),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: _fromProductId,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Transfer From', prefixIcon: Icon(Icons.outbox_outlined)),
+                items: products
+                    .where((p) => p.quantity > 0)
+                    .map((p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Text('${p.name} (${p.quantity} in stock)',
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() {
+                  _fromProductId = v;
+                  if (_toProductId == v) _toProductId = null;
+                }),
+                validator: (v) => v == null ? 'Select a source product' : null,
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _toProductId,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Transfer To', prefixIcon: Icon(Icons.inbox_outlined)),
+                items: products
+                    .where((p) => p.id != _fromProductId)
+                    .map((p) => DropdownMenuItem(
+                          value: p.id,
+                          child: Text('${p.name} (${p.quantity} in stock)',
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _toProductId = v),
+                validator: (v) => v == null ? 'Select a destination product' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _quantityController,
+                keyboardType: TextInputType.number,
+                validator: Validators.positiveNumber,
+                decoration: const InputDecoration(labelText: 'Quantity', prefixIcon: Icon(Icons.swap_horiz_rounded)),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _notesController,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: 'Notes', alignLabelWithHint: true),
+              ),
+              const SizedBox(height: 24),
+              LoadingButton(
+                loading: loading,
+                label: 'Transfer Stock',
+                icon: Icons.swap_horiz_rounded,
+                onPressed: () async {
+                  if (!_formKey.currentState!.validate()) return;
+                  final ok = await ref.read(stockMutationControllerProvider.notifier).transfer(
+                        fromProductId: _fromProductId!,
+                        toProductId: _toProductId!,
+                        quantity: int.parse(_quantityController.text.trim()),
+                        notes: _notesController.text.trim(),
+                      );
+                  if (!context.mounted) return;
+                  if (ok) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock transferred successfully')));
+                    Navigator.of(context).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(ref.read(stockMutationControllerProvider).error ?? 'Stock transfer failed')),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

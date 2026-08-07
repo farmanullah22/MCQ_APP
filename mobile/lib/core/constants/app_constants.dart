@@ -69,6 +69,7 @@ class AppConstants {
     'RESTORE_CATEGORY': 'Category Restored',
     'STOCK_IN': 'Stock In',
     'STOCK_OUT': 'Stock Out',
+    'STOCK_TRANSFER': 'Stock Transfer',
     'CREATE_SALE': 'Sale Created',
     'UPDATE_SALE': 'Sale Updated',
     'DELETE_SALE': 'Sale Deleted',

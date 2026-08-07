@@ -5,6 +5,7 @@ import 'dart:ui';
 import '../core/theme/app_colors.dart';
 import '../features/analytics/presentation/analytics_screen.dart';
 import '../features/audit/presentation/audit_logs_screen.dart';
+import '../features/audit/presentation/recent_activity_screen.dart';
 import '../features/auth/providers/auth_providers.dart';
 import '../features/categories/presentation/category_screen.dart';
 import '../features/customers/presentation/customers_screen.dart';
@@ -171,6 +172,7 @@ class _HomeShellState extends ConsumerState<HomeShell> {
           ],
           const Divider(),
           const _DrawerSection('General'),
+          _DrawerItem(icon: Icons.history_outlined, label: 'Recent Activity', onTap: () => _open(const RecentActivityScreen())),
           _DrawerItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () => _open(const NotificationsScreen())),
           _DrawerItem(icon: Icons.person_outline, label: 'Profile', onTap: () => _open(const ProfileScreen())),
           _DrawerItem(icon: Icons.settings_outlined, label: 'Settings', onTap: () => _open(const SettingsScreen())),

@@ -176,6 +176,7 @@ class DashboardCards {
   final int customerCount;
   final int stockInToday;
   final int stockOutToday;
+  final int supplierCount;
 
   const DashboardCards({
     this.totalShops = 0,
@@ -195,6 +196,7 @@ class DashboardCards {
     this.customerCount = 0,
     this.stockInToday = 0,
     this.stockOutToday = 0,
+    this.supplierCount = 0,
   });
 
   factory DashboardCards.fromJson(Map<String, dynamic> json) => DashboardCards(
@@ -215,6 +217,7 @@ class DashboardCards {
         customerCount: (json['customerCount'] as num?)?.toInt() ?? 0,
         stockInToday: (json['stockInToday'] as num?)?.toInt() ?? 0,
         stockOutToday: (json['stockOutToday'] as num?)?.toInt() ?? 0,
+        supplierCount: (json['supplierCount'] as num?)?.toInt() ?? 0,
       );
 }
 

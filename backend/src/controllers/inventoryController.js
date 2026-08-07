@@ -122,6 +122,83 @@ const stockOut = asyncHandler(async (req, res) => {
   res.status(201).json(ApiResponse.created('Stock removed successfully', { product }));
 });
 
+const transferStock = asyncHandler(async (req, res) => {
+  const { fromProductId, toProductId, quantity, date, notes } = req.body;
+  if (!fromProductId || !toProductId || !quantity || quantity <= 0) {
+    throw new ApiError(400, 'Source product, destination product and a positive quantity are required.');
+  }
+  if (fromProductId === toProductId) {
+    throw new ApiError(400, 'Source and destination products must be different.');
+  }
+
+  const [fromProduct, toProduct] = await Promise.all([
+    Product.findById(fromProductId),
+    Product.findById(toProductId),
+  ]);
+  if (!fromProduct || fromProduct.isDeleted) throw new ApiError(404, 'Source product not found.');
+  if (!toProduct || toProduct.isDeleted) throw new ApiError(404, 'Destination product not found.');
+  assertShopAccess(fromProduct, req.user);
+  assertShopAccess(toProduct, req.user);
+
+  const qty = Number(quantity);
+  if (fromProduct.quantity < qty) {
+    throw new ApiError(400, `Insufficient stock. Only ${fromProduct.quantity} available in "${fromProduct.name}".`);
+  }
+
+  const fromPrevious = fromProduct.quantity;
+  const toPrevious = toProduct.quantity;
+  fromProduct.quantity -= qty;
+  toProduct.quantity += qty;
+  await Promise.all([fromProduct.save(), toProduct.save()]);
+
+  await InventoryLog.create([
+    {
+      shop: fromProduct.shop,
+      product: fromProduct._id,
+      productName: fromProduct.name,
+      actionType: 'stock_out',
+      quantity: qty,
+      previousStock: fromPrevious,
+      newStock: fromProduct.quantity,
+      reason: notes || `Transferred to ${toProduct.name}`,
+      reference: req.body.reference || '',
+      date: date || new Date(),
+      performedBy: req.user._id,
+    },
+    {
+      shop: toProduct.shop,
+      product: toProduct._id,
+      productName: toProduct.name,
+      actionType: 'stock_in',
+      quantity: qty,
+      previousStock: toPrevious,
+      newStock: toProduct.quantity,
+      supplier: '',
+      reason: notes || `Transferred from ${fromProduct.name}`,
+      reference: req.body.reference || '',
+      date: date || new Date(),
+      performedBy: req.user._id,
+    },
+  ]);
+
+  await recordAudit(req, {
+    actionType: 'STOCK_TRANSFER',
+    module: 'inventory',
+    recordId: fromProduct._id,
+    recordType: 'Product',
+    oldData: { fromQuantity: fromPrevious, toQuantity: toPrevious },
+    newData: { fromQuantity: fromProduct.quantity, toQuantity: toProduct.quantity, transferred: qty },
+    remarks: `Transferred ${qty} x "${fromProduct.name}" -> "${toProduct.name}"`,
+    shopId: fromProduct.shop,
+  });
+
+  await maybeNotifyLowStock(fromProduct, req.user);
+
+  res.status(201).json(
+    ApiResponse.created('Stock transferred successfully', { from: fromProduct, to: toProduct })
+  );
+});
+
 const inventoryHistory = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page, 10) || 1;
   const limit = parseInt(req.query.limit, 10) || 30;
@@ -149,4 +226,4 @@ const inventoryHistory = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok('Inventory history fetched', { logs, total, page, limit, totalPages: Math.ceil(total / limit) }));
 });
 
-module.exports = { stockIn, stockOut, inventoryHistory };
+module.exports = { stockIn, stockOut, transferStock, inventoryHistory };

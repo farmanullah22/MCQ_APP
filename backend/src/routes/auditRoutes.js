@@ -3,10 +3,12 @@ const auditController = require('../controllers/auditController');
 const { restrictTo } = require('../middleware/auth');
 const router = express.Router();
 
-// Entire audit module is admin-only. Managers cannot view or modify logs.
+// Managers may read activity (scoped to their shop in the controller).
+// Stats, export, detail and restore stay admin-only.
+router.get('/', auditController.listAuditLogs);
+
 router.use(restrictTo('admin'));
 
-router.get('/', auditController.listAuditLogs);
 router.get('/stats', auditController.auditStats);
 router.get('/action-types', auditController.actionTypes);
 router.get('/export', auditController.exportLogs);

@@ -113,11 +113,13 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      isExpanded: true,
                       decoration: const InputDecoration(labelText: 'Product', prefixIcon: Icon(Icons.carpenter_outlined)),
                       items: available
                           .map((p) => DropdownMenuItem(
                                 value: p.id,
-                                child: Text('${p.name} (${p.quantity} in stock)'),
+                                child: Text('${p.name} (${p.quantity} in stock)',
+                                    maxLines: 1, overflow: TextOverflow.ellipsis),
                               ))
                           .toList(),
                       onChanged: (v) {

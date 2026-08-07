@@ -102,6 +102,30 @@ class StockMutationController extends Notifier<StockMutationState> {
       return false;
     }
   }
+  Future<bool> transfer({
+    required String fromProductId,
+    required String toProductId,
+    required int quantity,
+    String notes = '',
+  }) async {
+    state = const StockMutationState(loading: true);
+    try {
+      await ref.read(inventoryRepositoryProvider).transfer(
+            fromProductId: fromProductId,
+            toProductId: toProductId,
+            quantity: quantity,
+            notes: notes,
+          );
+      state = const StockMutationState();
+      ref.invalidate(inventoryHistoryControllerProvider);
+      ref.invalidate(productListControllerProvider);
+      ref.invalidate(dashboardControllerProvider);
+      return true;
+    } catch (e) {
+      state = StockMutationState(error: e.toString());
+      return false;
+    }
+  }
 }
 
 final stockMutationControllerProvider =

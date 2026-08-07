@@ -12,6 +12,9 @@ import '../theme/app_colors.dart';
     if (t.contains('UPDATE')) return (icon: Icons.edit_outlined, color: AppColors.warning);
     return (icon: Icons.point_of_sale_outlined, color: AppColors.success);
   }
+  if (t.contains('TRANSFER')) {
+    return (icon: Icons.swap_horiz_rounded, color: AppColors.violet);
+  }
   if (t.contains('STOCK')) {
     if (t.contains('OUT')) return (icon: Icons.arrow_downward, color: AppColors.danger);
     return (icon: Icons.inventory_2_outlined, color: AppColors.info);

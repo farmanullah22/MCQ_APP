@@ -37,6 +37,22 @@ class InventoryRepository {
     });
   }
 
+  Future<Map<String, dynamic>> transfer({
+    required String fromProductId,
+    required String toProductId,
+    required int quantity,
+    DateTime? date,
+    String notes = '',
+  }) async {
+    return _api.request('POST', '/inventory/transfer', data: {
+      'fromProductId': fromProductId,
+      'toProductId': toProductId,
+      'quantity': quantity,
+      if (date != null) 'date': date.toIso8601String(),
+      'notes': notes,
+    });
+  }
+
   Future<({List<InventoryLog> logs, int total})> history({
     String? actionType,
     String? productId,

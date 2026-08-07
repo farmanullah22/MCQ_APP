@@ -120,12 +120,17 @@ const getDashboard = asyncHandler(async (req, res) => {
 const buildManagerPayload = async (req, shopId, productCount, lowStockCount) => {
   const shop = req.user.assignedShop;
 
-  const [todaySales, customerPhones, lowStock, inventoryLogs, auditLogs] = await Promise.all([
+  const [todaySales, customerPhones, suppliers, lowStock, inventoryLogs, auditLogs] = await Promise.all([
     stats.getSalesTotal(stats.dateRange('today'), shopId),
     Sale.distinct('customerPhone', {
       isDeleted: false,
       shop: shopId,
       customerPhone: { $ne: '' },
+    }),
+    Product.distinct('supplier', {
+      isDeleted: false,
+      shop: shopId,
+      supplier: { $ne: '' },
     }),
     Product.find({
       isDeleted: false,
@@ -169,6 +174,8 @@ const buildManagerPayload = async (req, shopId, productCount, lowStockCount) => 
       totalProducts: productCount,
       lowStockCount,
       todayOrders: todaySales.count,
+      salesToday: todaySales.total,
+      supplierCount: suppliers.length,
       customerCount: customerPhones.length,
       stockInToday: await countStockAction(shopId, 'STOCK_IN'),
       stockOutToday: await countStockAction(shopId, 'STOCK_OUT'),
