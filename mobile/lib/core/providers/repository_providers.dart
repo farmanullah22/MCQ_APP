@@ -5,6 +5,7 @@ import '../../features/analytics/data/analytics_repository.dart';
 import '../../features/audit/data/audit_repository.dart';
 import '../../features/auth/data/auth_repository.dart';
 import '../../features/categories/data/category_repository.dart';
+import '../../features/customers/data/customer_repository.dart';
 import '../../features/dashboard/data/dashboard_repository.dart';
 import '../../features/expenses/data/expense_repository.dart';
 import '../../features/inventory/data/inventory_repository.dart';
@@ -13,6 +14,7 @@ import '../../features/products/data/product_repository.dart';
 import '../../features/reports/data/report_repository.dart';
 import '../../features/sales/data/sale_repository.dart';
 import '../../features/shops/data/shop_repository.dart';
+import '../../features/suppliers/data/supplier_repository.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) => AuthRepository(ref.watch(apiClientProvider)));
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) => DashboardRepository(ref.watch(apiClientProvider)));
@@ -26,3 +28,5 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) => ReportRepos
 final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) => AnalyticsRepository(ref.watch(apiClientProvider)));
 final auditRepositoryProvider = Provider<AuditRepository>((ref) => AuditRepository(ref.watch(apiClientProvider)));
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) => NotificationRepository(ref.watch(apiClientProvider)));
+final customerRepositoryProvider = Provider<CustomerRepository>((ref) => CustomerRepository(ref.watch(apiClientProvider)));
+final supplierRepositoryProvider = Provider<SupplierRepository>((ref) => SupplierRepository(ref.watch(apiClientProvider)));

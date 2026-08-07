@@ -1,6 +1,8 @@
 const Shop = require('../models/Shop');
 const Product = require('../models/Product');
 const Sale = require('../models/Sale');
+const Customer = require('../models/Customer');
+const Supplier = require('../models/Supplier');
 const InventoryLog = require('../models/InventoryLog');
 const AuditLog = require('../models/AuditLog');
 const asyncHandler = require('../utils/asyncHandler');
@@ -120,18 +122,10 @@ const getDashboard = asyncHandler(async (req, res) => {
 const buildManagerPayload = async (req, shopId, productCount, lowStockCount) => {
   const shop = req.user.assignedShop;
 
-  const [todaySales, customerPhones, suppliers, lowStock, inventoryLogs, auditLogs] = await Promise.all([
+  const [todaySales, customerCount, supplierCount, lowStock, inventoryLogs, auditLogs] = await Promise.all([
     stats.getSalesTotal(stats.dateRange('today'), shopId),
-    Sale.distinct('customerPhone', {
-      isDeleted: false,
-      shop: shopId,
-      customerPhone: { $ne: '' },
-    }),
-    Product.distinct('supplier', {
-      isDeleted: false,
-      shop: shopId,
-      supplier: { $ne: '' },
-    }),
+    Customer.countDocuments({ isDeleted: false, shop: shopId }),
+    Supplier.countDocuments({ isDeleted: false, shop: shopId }),
     Product.find({
       isDeleted: false,
       shop: shopId,
@@ -175,8 +169,8 @@ const buildManagerPayload = async (req, shopId, productCount, lowStockCount) => 
       lowStockCount,
       todayOrders: todaySales.count,
       salesToday: todaySales.total,
-      supplierCount: suppliers.length,
-      customerCount: customerPhones.length,
+      supplierCount,
+      customerCount,
       stockInToday: await countStockAction(shopId, 'STOCK_IN'),
       stockOutToday: await countStockAction(shopId, 'STOCK_OUT'),
     },

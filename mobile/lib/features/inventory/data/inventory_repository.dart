@@ -38,19 +38,31 @@ class InventoryRepository {
   }
 
   Future<Map<String, dynamic>> transfer({
-    required String fromProductId,
-    required String toProductId,
+    required String fromShopId,
+    required String toShopId,
+    required String productId,
     required int quantity,
     DateTime? date,
     String notes = '',
   }) async {
     return _api.request('POST', '/inventory/transfer', data: {
-      'fromProductId': fromProductId,
-      'toProductId': toProductId,
+      'fromShopId': fromShopId,
+      'toShopId': toShopId,
+      'productId': productId,
       'quantity': quantity,
       if (date != null) 'date': date.toIso8601String(),
       'notes': notes,
     });
+  }
+
+  Future<List<Map<String, dynamic>>> transferShops() async {
+    final res = await _api.request('GET', '/inventory/shops');
+    return (res['data'] as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<List<Map<String, dynamic>>> shopProducts(String shopId) async {
+    final res = await _api.request('GET', '/inventory/products/$shopId');
+    return (res['data'] as List).cast<Map<String, dynamic>>();
   }
 
   Future<({List<InventoryLog> logs, int total})> history({

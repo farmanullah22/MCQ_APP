@@ -15,7 +15,7 @@ class AppConstants {
 
   static const String currencySymbol = 'Rs.';
 
-  static const List<String> paymentMethods = ['cash', 'bank', 'easypaisa', 'jazzcash'];
+  static const List<String> paymentMethods = ['cash', 'bank', 'easypaisa', 'jazzcash', 'credit'];
   static const List<String> expenseCategories = [
     'rent',
     'electricity',
@@ -38,6 +38,8 @@ class AppConstants {
     'shops',
     'users',
     'reports',
+    'customers',
+    'suppliers',
   ];
 
   static const Map<String, String> paymentMethodLabels = {
@@ -45,6 +47,7 @@ class AppConstants {
     'bank': 'Bank',
     'easypaisa': 'EasyPaisa',
     'jazzcash': 'JazzCash',
+    'credit': 'Credit',
   };
 
   static const Map<String, String> expenseCategoryLabels = {
@@ -83,5 +86,13 @@ class AppConstants {
     'LOGIN': 'Login',
     'LOGOUT': 'Logout',
     'REPORT_DOWNLOAD': 'Report Downloaded',
+    'CREATE_CUSTOMER': 'Customer Added',
+    'UPDATE_CUSTOMER': 'Customer Updated',
+    'DELETE_CUSTOMER': 'Customer Deleted',
+    'RESTORE_CUSTOMER': 'Customer Restored',
+    'CREATE_SUPPLIER': 'Supplier Added',
+    'UPDATE_SUPPLIER': 'Supplier Updated',
+    'DELETE_SUPPLIER': 'Supplier Deleted',
+    'RESTORE_SUPPLIER': 'Supplier Restored',
   };
 }

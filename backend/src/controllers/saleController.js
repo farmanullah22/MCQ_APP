@@ -143,6 +143,34 @@ const createSale = asyncHandler(async (req, res) => {
     }))
   );
 
+  // Link the sale to a registered customer (matched by phone) and update
+  // their purchase history. Credit sales also increase the outstanding due.
+  const phone = (sale.customerPhone || '').trim();
+  if (phone) {
+    const Customer = require('../models/Customer');
+    const customer = await Customer.findOne({
+      isDeleted: false,
+      shop: shopId,
+      phone: { $regex: `^${phone.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+    });
+    if (customer) {
+      customer.totalSpent += sale.totalAmount;
+      customer.purchaseCount += 1;
+      customer.lastPurchaseAt = new Date();
+      if (sale.paymentMethod === 'credit') {
+        customer.balance += sale.totalAmount;
+        customer.transactions.push({
+          amount: sale.totalAmount,
+          type: 'charge',
+          note: `Credit sale ${invoiceNo}`,
+          date: new Date(),
+          by: req.user._id,
+        });
+      }
+      await customer.save();
+    }
+  }
+
   res.status(201).json(ApiResponse.created('Sale created successfully', sale));
 });
 

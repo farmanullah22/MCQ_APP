@@ -237,7 +237,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
     final sale = await ref.read(saleMutationControllerProvider.notifier).create(
           items: _cart
               .map((c) => {
-                    'product': c.product.id,
+                    'productId': c.product.id,
                     'quantity': c.quantity,
                     'unitPrice': c.product.sellingPrice,
                   })

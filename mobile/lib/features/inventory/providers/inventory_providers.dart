@@ -103,16 +103,18 @@ class StockMutationController extends Notifier<StockMutationState> {
     }
   }
   Future<bool> transfer({
-    required String fromProductId,
-    required String toProductId,
+    required String fromShopId,
+    required String toShopId,
+    required String productId,
     required int quantity,
     String notes = '',
   }) async {
     state = const StockMutationState(loading: true);
     try {
       await ref.read(inventoryRepositoryProvider).transfer(
-            fromProductId: fromProductId,
-            toProductId: toProductId,
+            fromShopId: fromShopId,
+            toShopId: toShopId,
+            productId: productId,
             quantity: quantity,
             notes: notes,
           );

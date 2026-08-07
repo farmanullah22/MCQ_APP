@@ -25,7 +25,7 @@ const saleSchema = new mongoose.Schema(
     profit: { type: Number, default: 0 },
     paymentMethod: {
       type: String,
-      enum: ['cash', 'bank', 'easypaisa', 'jazzcash'],
+      enum: ['cash', 'bank', 'easypaisa', 'jazzcash', 'credit'],
       default: 'cash',
     },
     notes: { type: String, default: '' },

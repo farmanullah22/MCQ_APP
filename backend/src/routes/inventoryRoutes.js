@@ -7,6 +7,8 @@ const router = express.Router();
 router.post('/in', restrictTo('manager'), inventoryController.stockIn);
 router.post('/out', restrictTo('manager'), inventoryController.stockOut);
 router.post('/transfer', restrictTo('manager'), inventoryController.transferStock);
+router.get('/shops', inventoryController.transferShops);
+router.get('/products/:shopId', inventoryController.shopProducts);
 router.get('/history', inventoryController.inventoryHistory);
 
 module.exports = router;

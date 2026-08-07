@@ -1693,7 +1693,7 @@ class _QuickActionsSlider extends ConsumerWidget {
     ];
 
     return SizedBox(
-      height: 152,
+      height: 124,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -1718,12 +1718,12 @@ class _QuickActionsSlider extends ConsumerWidget {
                   border: Border.all(color: _gold.withValues(alpha: 0.3)),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 10),
                   child: Column(
                     children: [
                       Container(
-                        width: 46,
-                        height: 46,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
@@ -1734,14 +1734,14 @@ class _QuickActionsSlider extends ConsumerWidget {
                           boxShadow: [
                             BoxShadow(
                               color: _gold.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: Icon(a.icon, size: 20, color: const Color(0xFF17151C)),
+                        child: Icon(a.icon, size: 18, color: const Color(0xFF17151C)),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
