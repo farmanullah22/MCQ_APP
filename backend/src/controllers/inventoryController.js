@@ -174,6 +174,8 @@ const transferStock = asyncHandler(async (req, res) => {
       sellingPrice: fromProduct.sellingPrice,
       quantity: 0,
       lowStockThreshold: fromProduct.lowStockThreshold,
+      color: fromProduct.color,
+      size: fromProduct.size,
       description: fromProduct.description,
       images: fromProduct.images,
       shop: toShopId,

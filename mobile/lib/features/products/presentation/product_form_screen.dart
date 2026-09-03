@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/status_views.dart';
@@ -18,11 +22,14 @@ class ProductFormScreen extends ConsumerStatefulWidget {
 
 class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _imagePicker = ImagePicker();
   late final TextEditingController _name;
   late final TextEditingController _sku;
   late final TextEditingController _barcode;
   late final TextEditingController _brand;
   late final TextEditingController _supplier;
+  late final TextEditingController _color;
+  late final TextEditingController _size;
   late final TextEditingController _costPrice;
   late final TextEditingController _sellingPrice;
   late final TextEditingController _quantity;
@@ -31,6 +38,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   String? _categoryId;
   bool _isEdit = false;
+  Uint8List? _imageBytes;
+  String? _existingImageUrl;
 
   @override
   void initState() {
@@ -42,12 +51,23 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _barcode = TextEditingController(text: p?.barcode ?? '');
     _brand = TextEditingController(text: p?.brand ?? '');
     _supplier = TextEditingController(text: p?.supplier ?? '');
+    _color = TextEditingController(text: p?.color ?? '');
+    _size = TextEditingController(text: p?.size ?? '');
     _costPrice = TextEditingController(text: p != null ? '${p.costPrice}' : '');
     _sellingPrice = TextEditingController(text: p != null ? '${p.sellingPrice}' : '');
     _quantity = TextEditingController(text: p != null ? '${p.quantity}' : '0');
     _threshold = TextEditingController(text: p != null ? '${p.lowStockThreshold}' : '5');
     _description = TextEditingController(text: p?.description ?? '');
     _categoryId = p?.categoryId;
+    if (p != null && p.images.isNotEmpty) {
+      final img = p.images.first;
+      if (img.startsWith('data:image')) {
+        final base64Data = img.split(',').last;
+        _imageBytes = base64.decode(base64Data);
+      } else {
+        _existingImageUrl = img;
+      }
+    }
   }
 
   @override
@@ -57,12 +77,35 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _barcode.dispose();
     _brand.dispose();
     _supplier.dispose();
+    _color.dispose();
+    _size.dispose();
     _costPrice.dispose();
     _sellingPrice.dispose();
     _quantity.dispose();
     _threshold.dispose();
     _description.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picked = await _imagePicker.pickImage(source: source, imageQuality: 80);
+    if (picked != null) {
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _imageBytes = bytes;
+        _existingImageUrl = null;
+      });
+    }
+  }
+
+  String? _buildBase64DataUrl() {
+    if (_imageBytes == null) return null;
+    final ext = _imageBytes!.length > 4 &&
+            _imageBytes![0] == 0x89 &&
+            _imageBytes![1] == 0x50
+        ? 'png'
+        : 'jpeg';
+    return 'data:image/$ext;base64,${base64.encode(_imageBytes!)}';
   }
 
   Future<void> _submit() async {
@@ -75,11 +118,18 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       'category': _categoryId,
       'brand': _brand.text.trim(),
       'supplier': _supplier.text.trim(),
+      'color': _color.text.trim(),
+      'size': _size.text.trim(),
       'costPrice': double.parse(_costPrice.text.trim()),
       'sellingPrice': double.parse(_sellingPrice.text.trim()),
       'lowStockThreshold': int.tryParse(_threshold.text.trim()) ?? 5,
       'description': _description.text.trim(),
     };
+
+    final base64DataUrl = _buildBase64DataUrl();
+    if (base64DataUrl != null) {
+      data['images'] = [base64DataUrl];
+    }
 
     final ok = _isEdit
         ? await notifier.update(widget.product!.id, data)
@@ -164,6 +214,24 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      controller: _color,
+                      decoration: const InputDecoration(labelText: 'Color', prefixIcon: Icon(Icons.color_lens_outlined)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _size,
+                      decoration: const InputDecoration(labelText: 'Size', prefixIcon: Icon(Icons.straighten)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
                       controller: _costPrice,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       validator: Validators.positiveNumber,
@@ -203,6 +271,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 ],
               ),
               const SizedBox(height: 14),
+              _buildImageSection(),
+              const SizedBox(height: 14),
               TextFormField(
                 controller: _description,
                 maxLines: 3,
@@ -217,6 +287,95 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Product Image', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        if (_imageBytes != null)
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(_imageBytes!, height: 150, width: 150, fit: BoxFit.cover),
+              ),
+              GestureDetector(
+                onTap: () => setState(() {
+                  _imageBytes = null;
+                }),
+                child: Container(
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  padding: const EdgeInsets.all(4),
+                  child: const Icon(Icons.close, size: 18, color: Colors.white),
+                ),
+              ),
+            ],
+          )
+        else if (_existingImageUrl != null)
+          Stack(
+            alignment: Alignment.topRight,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(_existingImageUrl!, height: 150, width: 150, fit: BoxFit.cover),
+              ),
+              GestureDetector(
+                onTap: () => setState(() {
+                  _existingImageUrl = null;
+                }),
+                child: Container(
+                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  padding: const EdgeInsets.all(4),
+                  child: const Icon(Icons.close, size: 18, color: Colors.white),
+                ),
+              ),
+            ],
+          )
+        else
+          Row(
+            children: [
+              _imageSourceButton(
+                icon: Icons.photo_library_outlined,
+                label: 'Gallery',
+                onTap: () => _pickImage(ImageSource.gallery),
+              ),
+              const SizedBox(width: 12),
+              _imageSourceButton(
+                icon: Icons.camera_alt_outlined,
+                label: 'Camera',
+                onTap: () => _pickImage(ImageSource.camera),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _imageSourceButton({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 150,
+        height: 100,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey.shade400),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 32, color: Colors.grey.shade600),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(color: Colors.grey.shade600)),
+          ],
         ),
       ),
     );

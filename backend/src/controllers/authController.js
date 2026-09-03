@@ -6,14 +6,22 @@ const { signToken, parseDeviceInfo } = require('../utils/jwt');
 const { recordAudit } = require('../middleware/auth');
 
 const login = asyncHandler(async (req, res) => {
-  const { email, password, shopId } = req.body;
-  if (!email || !password) throw new ApiError(400, 'Email and password are required.');
+  const { email, phone, password, shopId } = req.body;
+  if (!password) throw new ApiError(400, 'Password is required.');
+  if (!email && !phone) throw new ApiError(400, 'Email or phone number is required.');
 
-  const user = await User.findOne({ email: email.toLowerCase() })
-    .select('+password')
-    .populate('assignedShop');
+  let user;
+  if (email) {
+    user = await User.findOne({ email: email.toLowerCase() })
+      .select('+password')
+      .populate('assignedShop');
+  } else {
+    user = await User.findOne({ phone })
+      .select('+password')
+      .populate('assignedShop');
+  }
   if (!user || !(await user.comparePassword(password))) {
-    throw new ApiError(401, 'Invalid email or password.');
+    throw new ApiError(401, 'Invalid credentials.');
   }
   if (!user.isActive) throw new ApiError(403, 'Your account has been deactivated.');
 
@@ -163,10 +171,18 @@ const changePassword = asyncHandler(async (req, res) => {
 
 const registerManager = asyncHandler(async (req, res) => {
   const { name, email, password, phone, assignedShop } = req.body;
-  if (!name || !email || !password) throw new ApiError(400, 'Name, email and password are required.');
+  if (!name) throw new ApiError(400, 'Name is required.');
+  if (!email && !phone) throw new ApiError(400, 'Email or phone number is required.');
+  if (!password) throw new ApiError(400, 'Password is required.');
 
-  const exists = await User.findOne({ email: email.toLowerCase() });
-  if (exists) throw new ApiError(409, 'A user with this email already exists.');
+  if (email) {
+    const exists = await User.findOne({ email: email.toLowerCase() });
+    if (exists) throw new ApiError(409, 'A user with this email already exists.');
+  }
+  if (phone) {
+    const exists = await User.findOne({ phone });
+    if (exists) throw new ApiError(409, 'A user with this phone number already exists.');
+  }
 
   const user = await User.create({
     name,

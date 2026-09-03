@@ -114,14 +114,17 @@ class _ManagersScreenState extends ConsumerState<ManagersScreen> {
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: emailController,
-                  validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(labelText: 'Email'),
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
                 ),
                 if (user == null) ...[
                   const SizedBox(height: 12),
@@ -151,10 +154,20 @@ class _ManagersScreenState extends ConsumerState<ManagersScreen> {
           FilledButton(
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
+              final email = emailController.text.trim();
+              final phone = phoneController.text.trim();
+              if (email.isEmpty && phone.isEmpty) {
+                if (ctx.mounted) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    const SnackBar(content: Text('Please provide either email or phone number')),
+                  );
+                }
+                return;
+              }
               final data = <String, dynamic>{
                 'name': nameController.text.trim(),
-                'email': emailController.text.trim(),
-                'phone': phoneController.text.trim(),
+                'email': email,
+                'phone': phone,
                 'assignedShop': shopId,
                 if (passwordController.text.isNotEmpty) 'password': passwordController.text,
               };

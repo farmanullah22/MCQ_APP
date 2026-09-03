@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/app_constants.dart';
+import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../customers/models/customer.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 import '../../products/models/product.dart';
 import '../../products/providers/product_providers.dart';
@@ -40,10 +42,34 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
 
   Product? _selectedProduct;
 
+  List<Customer> _customers = [];
+  String? _selectedCustomerId;
+  String _customerSearch = '';
+  bool _showCustomerSearch = false;
+
+  List<Customer> get _filteredCustomers {
+    final query = _customerSearch.trim().toLowerCase();
+    if (query.isEmpty) return _customers;
+    return _customers
+        .where((c) => c.name.toLowerCase().contains(query) || c.phone.toLowerCase().contains(query))
+        .toList();
+  }
+
   @override
   void initState() {
     super.initState();
     _shopId = ref.read(dashboardControllerProvider).selectedShopId;
+    _loadCustomers();
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      final page = await ref.read(customerRepositoryProvider).getCustomers(limit: 200);
+      if (!mounted) return;
+      setState(() => _customers = page.customers);
+    } catch (_) {
+      _customers = [];
+    }
   }
 
   @override
@@ -75,17 +101,101 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              TextFormField(
-                controller: _customerNameController,
-                decoration: const InputDecoration(labelText: 'Customer Name', prefixIcon: Icon(Icons.person_outline)),
+              const Text('Customer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String?>(
+                initialValue: _selectedCustomerId,
+                decoration: const InputDecoration(
+                  labelText: 'Select Customer',
+                  prefixIcon: Icon(Icons.person_search_outlined),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(value: null, child: Text('Walk-in Customer')),
+                  ..._customers.map((c) => DropdownMenuItem<String?>(
+                        value: c.id,
+                        child: Text('${c.name}${c.phone.isNotEmpty ? ' - ${c.phone}' : ''}',
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                      )),
+                ],
+                onChanged: (v) {
+                  setState(() {
+                    _selectedCustomerId = v;
+                    _showCustomerSearch = false;
+                    _customerSearch = '';
+                    if (v == null) {
+                      _customerNameController.clear();
+                      _customerPhoneController.clear();
+                    } else {
+                      final customer = _customers.where((c) => c.id == v).firstOrNull;
+                      if (customer != null) {
+                        _customerNameController.text = customer.name;
+                        _customerPhoneController.text = customer.phone;
+                      }
+                    }
+                  });
+                },
               ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _customerPhoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Customer Phone', prefixIcon: Icon(Icons.phone_outlined)),
-              ),
-              const SizedBox(height: 14),
+              if (_showCustomerSearch) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  autofocus: true,
+                  onChanged: (v) => setState(() => _customerSearch = v),
+                  decoration: InputDecoration(
+                    hintText: 'Search customers...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _customerSearch.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _customerSearch = ''),
+                          )
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._filteredCustomers.map((c) => Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      color: AppColors.primary.withValues(alpha: 0.05),
+                      child: ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.person_outline),
+                        title: Text(c.name),
+                        subtitle: c.phone.isNotEmpty ? Text(c.phone) : null,
+                        onTap: () {
+                          setState(() {
+                            _selectedCustomerId = c.id;
+                            _customerNameController.text = c.name;
+                            _customerPhoneController.text = c.phone;
+                            _showCustomerSearch = false;
+                            _customerSearch = '';
+                          });
+                        },
+                      ),
+                    )),
+              ] else if (_customers.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => setState(() => _showCustomerSearch = true),
+                    icon: const Icon(Icons.search, size: 18),
+                    label: const Text('Search customers'),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              if (_selectedCustomerId == null) ...[
+                TextFormField(
+                  controller: _customerNameController,
+                  decoration: const InputDecoration(labelText: 'Customer Name', prefixIcon: Icon(Icons.person_outline)),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _customerPhoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(labelText: 'Customer Phone', prefixIcon: Icon(Icons.phone_outlined)),
+                ),
+                const SizedBox(height: 14),
+              ],
               DropdownButtonFormField<String>(
                 initialValue: _paymentMethod,
                 decoration: const InputDecoration(labelText: 'Payment Method', prefixIcon: Icon(Icons.payments_outlined)),

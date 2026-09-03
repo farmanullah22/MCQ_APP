@@ -11,6 +11,8 @@ class Product {
   final double sellingPrice;
   final int quantity;
   final int lowStockThreshold;
+  final String color;
+  final String size;
   final String description;
   final List<String> images;
   final String? shopId;
@@ -31,6 +33,8 @@ class Product {
     required this.sellingPrice,
     this.quantity = 0,
     this.lowStockThreshold = 5,
+    this.color = '',
+    this.size = '',
     this.description = '',
     this.images = const [],
     this.shopId,
@@ -76,6 +80,8 @@ class Product {
       sellingPrice: (json['sellingPrice'] as num?)?.toDouble() ?? 0,
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       lowStockThreshold: (json['lowStockThreshold'] as num?)?.toInt() ?? 5,
+      color: json['color']?.toString() ?? '',
+      size: json['size']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       images: (json['images'] as List?)?.map((e) => e.toString()).toList() ?? const [],
       shopId: sId,
@@ -95,6 +101,8 @@ class Product {
         'costPrice': costPrice,
         'sellingPrice': sellingPrice,
         'lowStockThreshold': lowStockThreshold,
+        'color': color,
+        'size': size,
         'description': description,
         'images': images,
       };

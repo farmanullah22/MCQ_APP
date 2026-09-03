@@ -72,6 +72,8 @@ const createProduct = asyncHandler(async (req, res) => {
     quantity,
     lowStockThreshold,
     description,
+    color,
+    size,
     images,
   } = req.body;
 
@@ -97,6 +99,8 @@ const createProduct = asyncHandler(async (req, res) => {
     sellingPrice,
     quantity: quantity || 0,
     lowStockThreshold: lowStockThreshold !== undefined ? lowStockThreshold : 5,
+    color: color || '',
+    size: size || '',
     description: description || '',
     images: images || [],
     shop: shopId,
@@ -133,6 +137,8 @@ const updateProduct = asyncHandler(async (req, res) => {
     'costPrice',
     'sellingPrice',
     'lowStockThreshold',
+    'color',
+    'size',
     'description',
     'images',
   ];

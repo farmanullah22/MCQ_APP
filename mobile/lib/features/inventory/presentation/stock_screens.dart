@@ -8,6 +8,8 @@ import '../../../core/providers/repository_providers.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../products/models/product.dart';
 import '../../products/providers/product_providers.dart';
+import '../../suppliers/models/supplier.dart';
+import '../../suppliers/presentation/supplier_form_screen.dart';
 import '../providers/inventory_providers.dart';
 
 class StockInScreen extends ConsumerStatefulWidget {
@@ -25,18 +27,35 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
   final _quantityController = TextEditingController();
   final _supplierController = TextEditingController();
   final _notesController = TextEditingController();
+  final _supplierSearchController = TextEditingController();
   String? _productId;
+
+  List<Supplier> _suppliers = [];
+  Supplier? _selectedSupplier;
+  String? _selectedSupplierId;
+  String _supplierSearch = '';
+  bool _showSupplierSearch = false;
 
   @override
   void initState() {
     super.initState();
     _productId = widget.productId;
+    _loadSuppliers();
+  }
+
+  Future<void> _loadSuppliers() async {
+    try {
+      final supplierPage = await ref.read(supplierRepositoryProvider).getSuppliers(limit: 200);
+      if (!mounted) return;
+      setState(() => _suppliers = supplierPage.suppliers);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     _quantityController.dispose();
     _supplierController.dispose();
+    _supplierSearchController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -81,10 +100,120 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                 decoration: const InputDecoration(labelText: 'Quantity', prefixIcon: Icon(Icons.add_box_outlined)),
               ),
               const SizedBox(height: 14),
-              TextFormField(
-                controller: _supplierController,
-                decoration: const InputDecoration(labelText: 'Supplier', prefixIcon: Icon(Icons.local_shipping_outlined)),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: _selectedSupplierId,
+                      decoration: const InputDecoration(
+                        labelText: 'Supplier',
+                        prefixIcon: Icon(Icons.local_shipping_outlined),
+                      ),
+                      items: [
+                        const DropdownMenuItem(
+                          value: '',
+                          child: Text('Select Supplier', style: TextStyle(color: Colors.grey)),
+                        ),
+                        ..._suppliers
+                            .where((s) => _supplierSearch.isEmpty ||
+                                s.name.toLowerCase().contains(_supplierSearch.toLowerCase()))
+                            .map((s) => DropdownMenuItem(
+                                  value: s.id,
+                                  child: Text(s.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                )),
+                        const DropdownMenuItem(
+                          value: '___add_new___',
+                          child: Row(
+                            children: [
+                              Icon(Icons.add_circle_outline, size: 20, color: Colors.green),
+                              SizedBox(width: 8),
+                              Text('Add New Supplier', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        ),
+                        const DropdownMenuItem(
+                          value: '___other___',
+                          child: Text('Other (type manually)', style: TextStyle(fontStyle: FontStyle.italic)),
+                        ),
+                      ],
+                      onChanged: (v) async {
+                        if (v == '___add_new___') {
+                          final added = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(builder: (_) => const SupplierFormScreen()),
+                          );
+                          if (added == true && mounted) {
+                            await _loadSuppliers();
+                            if (_suppliers.isNotEmpty) {
+                              final latest = _suppliers.last;
+                              setState(() {
+                                _selectedSupplierId = latest.id;
+                                _selectedSupplier = latest;
+                              });
+                            }
+                          }
+                          return;
+                        }
+                        setState(() {
+                          _showSupplierSearch = false;
+                          _supplierSearch = '';
+                          _supplierSearchController.clear();
+                          if (v == null || v.isEmpty) {
+                            _selectedSupplierId = null;
+                            _selectedSupplier = null;
+                          } else if (v == '___other___') {
+                            _selectedSupplierId = '___other___';
+                            _selectedSupplier = null;
+                          } else {
+                            _selectedSupplierId = v;
+                            _selectedSupplier = _suppliers.firstWhere((s) => s.id == v);
+                          }
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _showSupplierSearch = !_showSupplierSearch;
+                        if (!_showSupplierSearch) {
+                          _supplierSearch = '';
+                          _supplierSearchController.clear();
+                        }
+                      });
+                    },
+                    icon: Icon(
+                      _showSupplierSearch ? Icons.search_off : Icons.search,
+                      color: _showSupplierSearch ? AppColors.primary : null,
+                    ),
+                    tooltip: 'Search suppliers',
+                  ),
+                ],
               ),
+              if (_showSupplierSearch)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: TextFormField(
+                    controller: _supplierSearchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Type to filter suppliers…',
+                      prefixIcon: Icon(Icons.filter_list),
+                    ),
+                    onChanged: (v) => setState(() => _supplierSearch = v),
+                  ),
+                ),
+              if (_selectedSupplierId == '___other___')
+                Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: TextFormField(
+                    controller: _supplierController,
+                    decoration: const InputDecoration(
+                      labelText: 'Supplier name',
+                      prefixIcon: Icon(Icons.edit_outlined),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 14),
               TextFormField(
                 controller: _notesController,
@@ -98,10 +227,16 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                 icon: Icons.arrow_downward,
                 onPressed: () async {
                   if (!_formKey.currentState!.validate()) return;
+                  String supplierName = '';
+                  if (_selectedSupplierId == '___other___') {
+                    supplierName = _supplierController.text.trim();
+                  } else if (_selectedSupplier != null) {
+                    supplierName = _selectedSupplier!.name;
+                  }
                   final ok = await ref.read(stockMutationControllerProvider.notifier).stockIn(
                         productId: _productId!,
                         quantity: int.parse(_quantityController.text.trim()),
-                        supplier: _supplierController.text.trim(),
+                        supplier: supplierName,
                         notes: _notesController.text.trim(),
                       );
                   if (!context.mounted) return;

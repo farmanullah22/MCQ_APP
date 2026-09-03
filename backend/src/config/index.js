@@ -12,4 +12,15 @@ module.exports = {
     password: process.env.ADMIN_PASSWORD || 'Admin@123',
   },
   managerPassword: process.env.MANAGER_PASSWORD || 'Manager@123',
+  email: {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT, 10) || 465,
+    secure: process.env.SMTP_SECURE === 'true' || true,
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || '',
+    to: process.env.REPORT_RECIPIENT_EMAIL || process.env.SMTP_USER || '',
+    enabled: (process.env.SMTP_USER && process.env.SMTP_PASS) ? true : false,
+  },
+  dailyReportCron: process.env.DAILY_REPORT_CRON || '0 21 * * *',
 };

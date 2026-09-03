@@ -70,14 +70,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       curve: const Interval(0.28, 0.9, curve: Curves.easeOutCubic),
     ),
   );
-  late final Animation<double> _featuresFade = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0.5, 0.9, curve: Curves.easeOut),
-  );
-  late final Animation<double> _demoFade = CurvedAnimation(
-    parent: _controller,
-    curve: const Interval(0.62, 1, curve: Curves.easeOut),
-  );
 
   @override
   void initState() {
@@ -217,14 +209,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     return error;
   }
 
-  void _onForgotPassword() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please contact your administrator to reset your password.'),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(
@@ -303,18 +287,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                           opacity: _cardFade,
                           child: _buildGlassCard(loading, showShop, isManager),
                         ),
-                      ),
-                      const SizedBox(height: 20),
-                      // ---- Features glass card ----
-                      FadeTransition(
-                        opacity: _featuresFade,
-                        child: const _FeaturesCard(),
-                      ),
-                      const SizedBox(height: 20),
-                      // ---- Demo accounts glass card ----
-                      FadeTransition(
-                        opacity: _demoFade,
-                        child: const _DemoCard(),
                       ),
                     ],
                   ),
@@ -447,26 +419,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _RememberMe(
-                            checked: _rememberMe,
-                            onChanged: (v) => setState(() => _rememberMe = v),
-                          ),
-                          TextButton(
-                            onPressed: _onForgotPassword,
-                            style: TextButton.styleFrom(
-                              foregroundColor: _goldLight,
-                              padding: const EdgeInsets.symmetric(vertical: 6),
-                              textStyle: GoogleFonts.poppins(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            child: const Text('Forgot Password?'),
-                          ),
-                        ],
+                      _RememberMe(
+                        checked: _rememberMe,
+                        onChanged: (v) => setState(() => _rememberMe = v),
                       ),
                       const SizedBox(height: 18),
                       _GoldButton(
@@ -789,205 +744,6 @@ class _GoldButtonState extends State<_GoldButton>
                       ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Features glass card: gold circular icons + 3 brand promises.
-class _FeaturesCard extends StatelessWidget {
-  const _FeaturesCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _GlassCard(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _FeatureItem(Icons.workspace_premium_outlined, 'Trusted Quality'),
-          _FeatureItem(Icons.support_agent_outlined, 'Best Service'),
-          _FeatureItem(Icons.handshake_outlined, 'Your Partner In Every Step'),
-        ],
-      ),
-    );
-  }
-}
-
-class _FeatureItem extends StatelessWidget {
-  const _FeatureItem(this.icon, this.label);
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Flexible(
-      child: Column(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFFD4AF37).withValues(alpha: 0.7),
-                width: 1.2,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFFD4AF37).withValues(alpha: 0.18),
-                  const Color(0xFFB8860B).withValues(alpha: 0.06),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFD4AF37).withValues(alpha: 0.2),
-                  blurRadius: 12,
-                ),
-              ],
-            ),
-            child: Icon(icon, color: const Color(0xFFD4AF37), size: 22),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.78),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Demo accounts glass card.
-class _DemoCard extends StatelessWidget {
-  const _DemoCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _GlassCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.person_outline, color: Color(0xFFD4AF37), size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Demo Accounts',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Color(0xFFF7D488),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          _DemoRow('Admin', 'admin@muallimcarpets.com', 'Admin@123'),
-          SizedBox(height: 8),
-          _DemoRow('Managers', 'israr@ · farooq@ · dostmuhammad@muallimcarpets.com', 'Manager@123'),
-        ],
-      ),
-    );
-  }
-}
-
-class _DemoRow extends StatelessWidget {
-  const _DemoRow(this.role, this.email, this.password);
-
-  final String role;
-  final String email;
-  final String password;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 78,
-          child: Text(
-            role,
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFFD4AF37),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                email,
-                style: GoogleFonts.poppins(
-                  fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.72),
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Password: $password',
-                style: GoogleFonts.poppins(
-                  fontSize: 10.5,
-                  color: Colors.white.withValues(alpha: 0.5),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Reusable frosted glass card used by the features + demo sections.
-class _GlassCard extends StatelessWidget {
-  const _GlassCard({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              color: const Color(0x59000000), // rgba(0,0,0,0.35)
-              border: Border.all(
-                color: const Color(0xFFD4AF37).withValues(alpha: 0.4),
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: child,
           ),
         ),
       ),

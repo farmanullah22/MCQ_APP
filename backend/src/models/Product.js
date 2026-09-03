@@ -16,6 +16,8 @@ const productSchema = new mongoose.Schema(
     sellingPrice: { type: Number, required: true, min: 0, default: 0 },
     quantity: { type: Number, required: true, min: 0, default: 0 },
     lowStockThreshold: { type: Number, default: 5 },
+    color: { type: String, default: '' },
+    size: { type: String, default: '' },
     description: { type: String, default: '' },
     images: { type: [String], default: [] },
     shop: {
