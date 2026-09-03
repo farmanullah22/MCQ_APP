@@ -22,12 +22,68 @@ class SaleFormScreen extends ConsumerStatefulWidget {
 }
 
 class _CartItem {
-  _CartItem(this.product, this.quantity);
+  _CartItem(this.product);
 
   final Product product;
-  int quantity;
 
-  double get lineTotal => product.sellingPrice * quantity;
+  double width = 0;
+  double height = 0;
+  double length = 0;
+  int qty = 1;
+  double sellingPrice = 0;
+
+  String get _type => product.productType;
+
+  double get area => width * height;
+
+  double get quantity {
+    switch (_type) {
+      case 'carpet':
+        return area;
+      case 'meter':
+        return length;
+      case 'qaleen':
+      default:
+        return qty.toDouble();
+    }
+  }
+
+  double get unitPrice {
+    switch (_type) {
+      case 'carpet':
+        return sellingPrice;
+      case 'meter':
+        return sellingPrice;
+      case 'qaleen':
+      default:
+        return sellingPrice;
+    }
+  }
+
+  double get lineTotal {
+    switch (_type) {
+      case 'carpet':
+        return area * sellingPrice;
+      case 'meter':
+        return length * sellingPrice;
+      case 'qaleen':
+      default:
+        return qty * sellingPrice;
+    }
+  }
+
+  bool get isComplete {
+    if (sellingPrice <= 0) return false;
+    switch (_type) {
+      case 'carpet':
+        return width > 0 && height > 0;
+      case 'meter':
+        return length > 0;
+      case 'qaleen':
+      default:
+        return qty > 0;
+    }
+  }
 }
 
 class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
@@ -260,18 +316,9 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                 Card(
                   child: Column(
                     children: [
-                      ..._cart.indexed.map((e) => _CartRow(
+                      ..._cart.indexed.map((e) => _CartEditor(
                             item: e.$2,
-                            onIncrease: () => setState(() {
-                              if (e.$2.quantity < e.$2.product.quantity) e.$2.quantity++;
-                            }),
-                            onDecrease: () => setState(() {
-                              if (e.$2.quantity > 1) {
-                                e.$2.quantity--;
-                              } else {
-                                _cart.removeAt(e.$1);
-                              }
-                            }),
+                            onChanged: () => setState(() {}),
                             onRemove: () => setState(() => _cart.removeAt(e.$1)),
                           )),
                     ],
@@ -333,10 +380,8 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   void _addToCart(Product product) {
     setState(() {
       final existing = _cart.where((c) => c.product.id == product.id).firstOrNull;
-      if (existing != null) {
-        if (existing.quantity < product.quantity) existing.quantity++;
-      } else {
-        _cart.add(_CartItem(product, 1));
+      if (existing == null) {
+        _cart.add(_CartItem(product));
       }
       _selectedProduct = null;
     });
@@ -344,12 +389,18 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_cart.any((c) => !c.isComplete)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Complete the dimensions and selling price for every item')),
+      );
+      return;
+    }
     final sale = await ref.read(saleMutationControllerProvider.notifier).create(
           items: _cart
               .map((c) => {
                     'productId': c.product.id,
                     'quantity': c.quantity,
-                    'unitPrice': c.product.sellingPrice,
+                    'unitPrice': c.unitPrice,
                   })
               .toList(),
           customerName: _customerNameController.text.trim().isEmpty
@@ -375,54 +426,112 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   }
 }
 
-class _CartRow extends StatelessWidget {
-  const _CartRow({
-    required this.item,
-    required this.onIncrease,
-    required this.onDecrease,
-    required this.onRemove,
-  });
+class _CartEditor extends StatelessWidget {
+  const _CartEditor({required this.item, required this.onChanged, required this.onRemove});
 
   final _CartItem item;
-  final VoidCallback onIncrease;
-  final VoidCallback onDecrease;
+  final VoidCallback onChanged;
   final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
+    final type = item._type;
+    final theme = Theme.of(context);
+
+    void update(void Function() fn) {
+      fn();
+      onChanged();
+    }
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      child: Row(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
+            children: [
+              Expanded(
+                child: Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18, color: AppColors.danger),
+                onPressed: onRemove,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (type == 'carpet')
+            Row(
               children: [
-                Text(item.product.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(Formatters.currency(item.product.sellingPrice), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: item.width > 0 ? '${item.width}' : '',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Width (m)', isDense: true),
+                    onChanged: (v) => update(() => item.width = double.tryParse(v) ?? 0),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: item.height > 0 ? '${item.height}' : '',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(labelText: 'Height (m)', isDense: true),
+                    onChanged: (v) => update(() => item.height = double.tryParse(v) ?? 0),
+                  ),
+                ),
               ],
+            )
+          else if (type == 'meter')
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TextFormField(
+                initialValue: item.length > 0 ? '${item.length}' : '',
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Length (m)', isDense: true),
+                onChanged: (v) => update(() => item.length = double.tryParse(v) ?? 0),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: TextFormField(
+                initialValue: item.qty > 0 ? '${item.qty}' : '',
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Pieces', isDense: true),
+                onChanged: (v) => update(() => item.qty = int.tryParse(v) ?? 0),
+              ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.remove_circle_outline, size: 20),
-            onPressed: onDecrease,
-          ),
-          Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.w700)),
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline, size: 20),
-            onPressed: onIncrease,
-          ),
-          SizedBox(
-            width: 90,
-            child: Text(
-              Formatters.currency(item.lineTotal),
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontWeight: FontWeight.w700),
+          if (type == 'carpet') ...[
+            const SizedBox(height: 6),
+            Text(
+              'Total Area: ${item.area.toStringAsFixed(2)} sqft',
+              style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
             ),
+            const SizedBox(height: 8),
+          ],
+          TextFormField(
+            initialValue: item.sellingPrice > 0 ? '${item.sellingPrice}' : '',
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: type == 'carpet' ? 'Selling Price / sqft (Rs.)' : type == 'meter' ? 'Selling Price / meter (Rs.)' : 'Selling Price / piece (Rs.)',
+              isDense: true,
+            ),
+            onChanged: (v) => update(() => item.sellingPrice = double.tryParse(v) ?? 0),
           ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18, color: AppColors.danger),
-            onPressed: onRemove,
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${item.quantity.toStringAsFixed(2)} ${type == 'carpet' ? 'sqft' : type == 'meter' ? 'm' : 'pcs'} x ${Formatters.currency(item.sellingPrice)}',
+                style: theme.textTheme.bodySmall,
+              ),
+              Text(
+                Formatters.currency(item.lineTotal),
+                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary),
+              ),
+            ],
           ),
         ],
       ),
