@@ -1,30 +1,40 @@
 const mongoose = require('mongoose');
 
+const qaleenSizeSchema = new mongoose.Schema(
+  { height: { type: Number, required: true }, width: { type: Number, required: true }, pieces: { type: Number, required: true, min: 1 } },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     sku: { type: String, default: '', trim: true },
     barcode: { type: String, default: '', trim: true },
-    category: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Category',
-      default: null,
-    },
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
     brand: { type: String, default: '' },
     supplier: { type: String, default: '' },
+    productType: { type: String, enum: ['carpet', 'qaleen', 'meter'], default: 'qaleen' },
+
+    carpetWidth: { type: Number, default: 0 },
+    carpetHeight: { type: Number, default: 0 },
+    carpetPieces: { type: Number, default: 0 },
+    costPerSqft: { type: Number, default: 0 },
+
+    costPerPiece: { type: Number, default: 0 },
+    qaleenSizes: { type: [qaleenSizeSchema], default: [] },
+
+    meterLength: { type: Number, default: 0 },
+    costPerMeter: { type: Number, default: 0 },
+
     costPrice: { type: Number, required: true, min: 0, default: 0 },
-    sellingPrice: { type: Number, required: true, min: 0, default: 0 },
+    sellingPrice: { type: Number, min: 0, default: 0 },
     quantity: { type: Number, required: true, min: 0, default: 0 },
     lowStockThreshold: { type: Number, default: 5 },
     color: { type: String, default: '' },
     size: { type: String, default: '' },
     description: { type: String, default: '' },
     images: { type: [String], default: [] },
-    shop: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Shop',
-      required: true,
-    },
+    shop: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
     isDeleted: { type: Boolean, default: false },
     deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     deletedAt: { type: Date, default: null },

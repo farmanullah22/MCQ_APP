@@ -199,6 +199,16 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final lowStock = product.isLowStock;
+    final typeIcon = product.productType == 'carpet'
+        ? Icons.grid_on
+        : product.productType == 'meter'
+            ? Icons.straighten
+            : Icons.inventory_2_outlined;
+    final typeLabel = product.productType == 'carpet'
+        ? 'Carpet'
+        : product.productType == 'meter'
+            ? 'Meter'
+            : 'Qaleen';
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -215,7 +225,7 @@ class _ProductCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.carpenter_outlined, color: AppColors.primary),
+                child: Icon(typeIcon, color: AppColors.primary),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -232,17 +242,23 @@ class _ProductCard extends StatelessWidget {
                             style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                           ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(typeLabel, style: const TextStyle(color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.w700)),
+                        ),
                         if (lowStock)
                           Container(
+                            margin: const EdgeInsets.only(left: 4),
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: AppColors.danger.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            child: const Text(
-                              'LOW',
-                              style: TextStyle(color: AppColors.danger, fontSize: 10, fontWeight: FontWeight.w700),
-                            ),
+                            child: const Text('LOW', style: TextStyle(color: AppColors.danger, fontSize: 10, fontWeight: FontWeight.w700)),
                           ),
                       ],
                     ),
@@ -257,17 +273,19 @@ class _ProductCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall,
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _typeDetail(product),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey.shade600),
+                    ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Text(
-                          Formatters.currency(product.sellingPrice),
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 15),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
                           'Cost ${Formatters.currency(product.costPrice)}',
-                          style: theme.textTheme.bodySmall,
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 14),
                         ),
                         const Spacer(),
                         Container(
@@ -277,7 +295,7 @@ class _ProductCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            '${product.quantity} in stock',
+                            _stockLabel(product),
                             style: TextStyle(
                               color: lowStock ? AppColors.danger : AppColors.success,
                               fontSize: 11,
@@ -295,5 +313,41 @@ class _ProductCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _typeDetail(Product p) {
+    switch (p.productType) {
+      case 'carpet':
+        if (p.carpetWidth > 0 && p.carpetHeight > 0) {
+          return '${p.carpetWidth}m x ${p.carpetHeight}m | ${p.carpetPieces} rolls';
+        }
+        return '${p.carpetPieces} rolls';
+      case 'meter':
+        return '${p.meterLength}m | ${Formatters.currency(p.costPerMeter)}/m';
+      case 'qaleen':
+        if (p.qaleenSizes.isNotEmpty) {
+          final total = p.qaleenSizes.fold(0, (sum, s) => sum + s.pieces);
+          return '${p.qaleenSizes.length} sizes | $total pieces';
+        }
+        return '${p.quantity} pieces | ${Formatters.currency(p.costPerPiece)}/pc';
+      default:
+        return '';
+    }
+  }
+
+  String _stockLabel(Product p) {
+    switch (p.productType) {
+      case 'carpet':
+        return '${p.carpetPieces} rolls';
+      case 'meter':
+        return '${p.meterLength}m';
+      case 'qaleen':
+        if (p.qaleenSizes.isNotEmpty) {
+          return '${p.quantity} pcs';
+        }
+        return '${p.quantity} pcs';
+      default:
+        return '${p.quantity} in stock';
+    }
   }
 }

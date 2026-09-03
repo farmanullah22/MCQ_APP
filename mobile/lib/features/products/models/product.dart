@@ -1,3 +1,19 @@
+class QaleenSize {
+  final double height;
+  final double width;
+  final int pieces;
+
+  const QaleenSize({required this.height, required this.width, required this.pieces});
+
+  factory QaleenSize.fromJson(Map<String, dynamic> json) => QaleenSize(
+        height: (json['height'] as num?)?.toDouble() ?? 0,
+        width: (json['width'] as num?)?.toDouble() ?? 0,
+        pieces: (json['pieces'] as num?)?.toInt() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {'height': height, 'width': width, 'pieces': pieces};
+}
+
 class Product {
   final String id;
   final String name;
@@ -7,6 +23,15 @@ class Product {
   final String? categoryName;
   final String brand;
   final String supplier;
+  final String productType;
+  final double carpetWidth;
+  final double carpetHeight;
+  final int carpetPieces;
+  final double costPerSqft;
+  final double costPerPiece;
+  final List<QaleenSize> qaleenSizes;
+  final double meterLength;
+  final double costPerMeter;
   final double costPrice;
   final double sellingPrice;
   final int quantity;
@@ -29,8 +54,17 @@ class Product {
     this.categoryName,
     this.brand = '',
     this.supplier = '',
+    this.productType = 'qaleen',
+    this.carpetWidth = 0,
+    this.carpetHeight = 0,
+    this.carpetPieces = 0,
+    this.costPerSqft = 0,
+    this.costPerPiece = 0,
+    this.qaleenSizes = const [],
+    this.meterLength = 0,
+    this.costPerMeter = 0,
     required this.costPrice,
-    required this.sellingPrice,
+    this.sellingPrice = 0,
     this.quantity = 0,
     this.lowStockThreshold = 5,
     this.color = '',
@@ -76,6 +110,18 @@ class Product {
       categoryName: catName,
       brand: json['brand']?.toString() ?? '',
       supplier: json['supplier']?.toString() ?? '',
+      productType: json['productType']?.toString() ?? 'qaleen',
+      carpetWidth: (json['carpetWidth'] as num?)?.toDouble() ?? 0,
+      carpetHeight: (json['carpetHeight'] as num?)?.toDouble() ?? 0,
+      carpetPieces: (json['carpetPieces'] as num?)?.toInt() ?? 0,
+      costPerSqft: (json['costPerSqft'] as num?)?.toDouble() ?? 0,
+      costPerPiece: (json['costPerPiece'] as num?)?.toDouble() ?? 0,
+      qaleenSizes: (json['qaleenSizes'] as List?)
+              ?.map((e) => QaleenSize.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      meterLength: (json['meterLength'] as num?)?.toDouble() ?? 0,
+      costPerMeter: (json['costPerMeter'] as num?)?.toDouble() ?? 0,
       costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0,
       sellingPrice: (json['sellingPrice'] as num?)?.toDouble() ?? 0,
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
@@ -98,6 +144,15 @@ class Product {
         'category': categoryId,
         'brand': brand,
         'supplier': supplier,
+        'productType': productType,
+        'carpetWidth': carpetWidth,
+        'carpetHeight': carpetHeight,
+        'carpetPieces': carpetPieces,
+        'costPerSqft': costPerSqft,
+        'costPerPiece': costPerPiece,
+        'qaleenSizes': qaleenSizes.map((s) => s.toJson()).toList(),
+        'meterLength': meterLength,
+        'costPerMeter': costPerMeter,
         'costPrice': costPrice,
         'sellingPrice': sellingPrice,
         'lowStockThreshold': lowStockThreshold,

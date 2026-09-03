@@ -59,34 +59,49 @@ const getProduct = asyncHandler(async (req, res) => {
   res.json(ApiResponse.ok('Product fetched', product));
 });
 
+const calcQuantityAndCost = (body) => {
+  const pt = body.productType || 'qaleen';
+  if (pt === 'carpet') {
+    const w = Number(body.carpetWidth) || 0;
+    const h = Number(body.carpetHeight) || 0;
+    const pieces = Number(body.carpetPieces) || 0;
+    const costPerSqft = Number(body.costPerSqft) || 0;
+    return { quantity: pieces, costPrice: w * h * pieces * costPerSqft };
+  }
+  if (pt === 'qaleen') {
+    if (Array.isArray(body.qaleenSizes) && body.qaleenSizes.length > 0) {
+      let totalPieces = 0;
+      body.qaleenSizes.forEach((s) => { totalPieces += Number(s.pieces) || 0; });
+      return { quantity: totalPieces, costPrice: Number(body.costPerPiece) || 0 };
+    }
+    return { quantity: Number(body.quantity) || 0, costPrice: Number(body.costPerPiece) || 0 };
+  }
+  if (pt === 'meter') {
+    const length = Number(body.meterLength) || 0;
+    return { quantity: length, costPrice: length * (Number(body.costPerMeter) || 0) };
+  }
+  return { quantity: Number(body.quantity) || 0, costPrice: Number(body.costPrice) || 0 };
+};
+
 const createProduct = asyncHandler(async (req, res) => {
   const {
-    name,
-    sku,
-    barcode,
-    category,
-    brand,
-    supplier,
-    costPrice,
-    sellingPrice,
-    quantity,
-    lowStockThreshold,
-    description,
-    color,
-    size,
-    images,
+    name, sku, barcode, category, brand, supplier, sellingPrice,
+    lowStockThreshold, description, color, size, images,
+    productType,
+    carpetWidth, carpetHeight, carpetPieces, costPerSqft,
+    costPerPiece, qaleenSizes,
+    meterLength, costPerMeter,
   } = req.body;
 
   if (!name) throw new ApiError(400, 'Product name is required.');
-  if (costPrice === undefined || sellingPrice === undefined) {
-    throw new ApiError(400, 'Cost price and selling price are required.');
-  }
 
   const shopId =
     req.user.role === 'manager'
       ? req.user.assignedShop._id
       : req.body.shopId || req.shopId || (await require('../models/Shop').findOne({ isDeleted: false }))._id;
   if (!shopId) throw new ApiError(400, 'shopId is required.');
+
+  const { quantity, costPrice } = calcQuantityAndCost(req.body);
 
   const product = await Product.create({
     name,
@@ -95,9 +110,18 @@ const createProduct = asyncHandler(async (req, res) => {
     category: category || null,
     brand: brand || '',
     supplier: supplier || '',
+    productType: productType || 'qaleen',
+    carpetWidth: carpetWidth || 0,
+    carpetHeight: carpetHeight || 0,
+    carpetPieces: carpetPieces || 0,
+    costPerSqft: costPerSqft || 0,
+    costPerPiece: costPerPiece || 0,
+    qaleenSizes: qaleenSizes || [],
+    meterLength: meterLength || 0,
+    costPerMeter: costPerMeter || 0,
     costPrice,
-    sellingPrice,
-    quantity: quantity || 0,
+    sellingPrice: sellingPrice || 0,
+    quantity,
     lowStockThreshold: lowStockThreshold !== undefined ? lowStockThreshold : 5,
     color: color || '',
     size: size || '',
@@ -128,23 +152,21 @@ const updateProduct = asyncHandler(async (req, res) => {
   const oldData = product.toObject();
 
   const allowed = [
-    'name',
-    'sku',
-    'barcode',
-    'category',
-    'brand',
-    'supplier',
-    'costPrice',
-    'sellingPrice',
-    'lowStockThreshold',
-    'color',
-    'size',
-    'description',
-    'images',
+    'name', 'sku', 'barcode', 'category', 'brand', 'supplier', 'sellingPrice',
+    'lowStockThreshold', 'color', 'size', 'description', 'images',
+    'productType',
+    'carpetWidth', 'carpetHeight', 'carpetPieces', 'costPerSqft',
+    'costPerPiece', 'qaleenSizes',
+    'meterLength', 'costPerMeter',
   ];
   allowed.forEach((field) => {
     if (req.body[field] !== undefined) product[field] = req.body[field];
   });
+
+  const { quantity, costPrice } = calcQuantityAndCost(product.toObject());
+  product.quantity = quantity;
+  product.costPrice = costPrice;
+
   await product.save();
   await product.populate('category', 'name').populate('shop', 'name');
 
