@@ -11,7 +11,9 @@ import '../../../core/utils/validators.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../categories/providers/category_providers.dart';
 import '../../products/models/product.dart';
+import '../../suppliers/models/supplier.dart';
 import '../providers/product_providers.dart';
+import '../../../core/providers/repository_providers.dart';
 
 class ProductFormScreen extends ConsumerStatefulWidget {
   const ProductFormScreen({super.key, this.product});
@@ -52,6 +54,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   bool _isEdit = false;
   Uint8List? _imageBytes;
   String? _existingImageUrl;
+  List<Supplier> _suppliers = [];
+  String? _supplierName;
 
   @override
   void initState() {
@@ -91,6 +95,24 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         _existingImageUrl = img;
       }
     }
+
+    _loadSuppliers();
+  }
+
+  Future<void> _loadSuppliers() async {
+    try {
+      final page = await ref.read(supplierRepositoryProvider).getSuppliers(limit: 200);
+      if (!mounted) return;
+      final suppliers = page.suppliers;
+      setState(() {
+        _suppliers = suppliers;
+        final existing = widget.product?.supplier ?? '';
+        if (existing.isNotEmpty) {
+          final matches = suppliers.where((sp) => sp.name == existing).toList();
+          _supplierName = matches.isNotEmpty ? matches.first.name : existing;
+        }
+      });
+    } catch (_) {}
   }
 
   @override
@@ -231,7 +253,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       'barcode': _barcode.text.trim(),
       'category': _categoryId,
       'brand': _brand.text.trim(),
-      'supplier': _supplier.text.trim(),
+      'supplier': _supplierName ?? _supplier.text.trim(),
       'color': _color.text.trim(),
       'size': _size.text.trim(),
       'productType': _productType,
@@ -340,22 +362,23 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 onChanged: (v) => setState(() => _categoryId = v),
               ),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _brand,
-                      decoration: const InputDecoration(labelText: 'Brand'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _supplier,
-                      decoration: const InputDecoration(labelText: 'Supplier'),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _brand,
+                decoration: const InputDecoration(labelText: 'Brand'),
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                initialValue: _supplierName,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Supplier', prefixIcon: Icon(Icons.local_shipping_outlined)),
+                hint: _suppliers.isEmpty ? const Text('No suppliers added yet') : const Text('Select a supplier'),
+                items: _suppliers
+                    .map((s) => DropdownMenuItem(value: s.name, child: Text(s.name, overflow: TextOverflow.ellipsis)))
+                    .toList(),
+                onChanged: (v) => setState(() {
+                  _supplierName = v;
+                  _supplier.text = v ?? '';
+                }),
               ),
               const SizedBox(height: 14),
               Row(
