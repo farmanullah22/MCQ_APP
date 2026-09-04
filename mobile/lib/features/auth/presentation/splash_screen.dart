@@ -58,7 +58,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> with SingleTickerPr
             child: ScaleTransition(
               scale: Tween(begin: 0.9, end: 1.0).animate(_fade),
               child: Image.asset(
-                'lib/images/logo.png',
+                'lib/images/muallimlogo.png',
                 width: 180,
                 height: 180,
                 fit: BoxFit.contain,

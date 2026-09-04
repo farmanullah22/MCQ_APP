@@ -7,7 +7,7 @@ class AppLogo extends StatelessWidget {
     super.key,
     this.size = 72,
     this.dark = false,
-    this.imagePath = 'lib/images/logo.png',
+    this.imagePath = 'lib/images/muallimlogo.png',
   });
 
   final double size;

@@ -15,7 +15,7 @@ class AppBarBrand extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(size * 0.28),
           child: Image.asset(
-            'lib/images/logo.png',
+            'lib/images/muallimlogo.png',
             width: size,
             height: size,
             fit: BoxFit.contain,
