@@ -7,11 +7,8 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Server base URL.
-  // Android emulator reaches host machine via 10.0.2.2.
-  // iOS simulator can use localhost. Update this for a physical device to
-  // point at your machine's LAN IP or your deployed server.
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
-  // static const String baseUrl = 'http://localhost:5000/api';
+  // Production API endpoint.
+  static const String baseUrl = 'https://carpetapi.interacts.uk/api';
 
   static const String currencySymbol = 'Rs.';
 
