@@ -10,6 +10,7 @@ import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/carpet_pattern.dart';
 import '../../auth/models/user.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../categories/presentation/category_screen.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
 import '../../inventory/presentation/stock_screens.dart';
 import '../../notifications/presentation/notifications_screen.dart';
@@ -1689,6 +1690,12 @@ class _QuickActionsSlider extends ConsumerWidget {
         label: 'Low Stock',
         color: _goldLight,
         screen: const LowStockScreen(),
+      ),
+      (
+        icon: Icons.category_outlined,
+        label: 'Categories',
+        color: const Color(0xFFC9A96A),
+        screen: const CategoryScreen(),
       ),
     ];
 

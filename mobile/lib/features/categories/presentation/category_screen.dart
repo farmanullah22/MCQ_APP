@@ -5,7 +5,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/status_views.dart';
-import '../../auth/providers/auth_providers.dart';
 import '../models/category.dart';
 import '../providers/category_providers.dart';
 
@@ -15,18 +14,16 @@ class CategoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(categoryListControllerProvider);
-    final isAdmin = ref.watch(currentUserProvider)?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Categories'),
         actions: [
-          if (isAdmin)
-            IconButton(
-              tooltip: 'Add Category',
-              icon: const Icon(Icons.add),
-              onPressed: () => _showForm(context, ref),
-            ),
+          IconButton(
+            tooltip: 'Add Category',
+            icon: const Icon(Icons.add),
+            onPressed: () => _showForm(context, ref),
+          ),
         ],
       ),
       body: state.data.when(
@@ -38,7 +35,7 @@ class CategoryScreen extends ConsumerWidget {
               icon: Icons.category_outlined,
               title: 'No categories yet',
               subtitle: 'Create categories to organize your products.',
-              action: isAdmin ? () => _showForm(context, ref) : null,
+              action: () => _showForm(context, ref),
             );
           }
           return RefreshIndicator(
@@ -62,21 +59,19 @@ class CategoryScreen extends ConsumerWidget {
                     ),
                     title: Text(category.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                     subtitle: category.description.isNotEmpty ? Text(category.description) : null,
-                    trailing: isAdmin
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, size: 20),
-                                onPressed: () => _showForm(context, ref, category: category),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
-                                onPressed: () => _confirmDelete(context, ref, category),
-                              ),
-                            ],
-                          )
-                        : null,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          onPressed: () => _showForm(context, ref, category: category),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
+                          onPressed: () => _confirmDelete(context, ref, category),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
