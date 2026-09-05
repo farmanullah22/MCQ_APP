@@ -68,6 +68,7 @@ class SaleMutationController extends Notifier<SaleMutationState> {
     String paymentMethod = 'cash',
     String notes = '',
     String? shopId,
+    double paidAmount = 0,
   }) async {
     state = const SaleMutationState(loading: true);
     try {
@@ -79,6 +80,7 @@ class SaleMutationController extends Notifier<SaleMutationState> {
             paymentMethod: paymentMethod,
             notes: notes,
             shopId: shopId,
+            paidAmount: paidAmount,
           );
       state = SaleMutationState(sale: sale);
       ref.invalidate(saleListControllerProvider);

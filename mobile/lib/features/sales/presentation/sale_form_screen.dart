@@ -92,6 +92,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   final _customerPhoneController = TextEditingController();
   final _discountController = TextEditingController();
   final _notesController = TextEditingController();
+  final _paidController = TextEditingController();
   final _cart = <_CartItem>[];
   String? _paymentMethod = 'cash';
   String? _shopId;
@@ -102,6 +103,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   String? _selectedCustomerId;
   String _customerSearch = '';
   bool _showCustomerSearch = false;
+  bool _paidAuto = true;
 
   List<Customer> get _filteredCustomers {
     final query = _customerSearch.trim().toLowerCase();
@@ -134,6 +136,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
     _customerPhoneController.dispose();
     _discountController.dispose();
     _notesController.dispose();
+    _paidController.dispose();
     super.dispose();
   }
 
@@ -148,6 +151,10 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
     final subtotal = _cart.fold<double>(0, (a, c) => a + c.lineTotal);
     final discount = double.tryParse(_discountController.text.trim()) ?? 0;
     final total = (subtotal - discount).clamp(0, double.infinity);
+    final selectedCustomer = _selectedCustomerId == null ? null : _customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
+    final customerDue = selectedCustomer?.balance ?? 0;
+    final paid = double.tryParse(_paidController.text.trim()) ?? 0;
+    final newDue = (total - paid).clamp(0, double.infinity);
 
     return Scaffold(
       appBar: AppBar(title: const Text('New Sale')),
@@ -318,8 +325,14 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                     children: [
                       ..._cart.indexed.map((e) => _CartEditor(
                             item: e.$2,
-                            onChanged: () => setState(() {}),
-                            onRemove: () => setState(() => _cart.removeAt(e.$1)),
+                            onChanged: () {
+                              setState(() {});
+                              _syncPaidToTotal();
+                            },
+                            onRemove: () {
+                              setState(() => _cart.removeAt(e.$1));
+                              _syncPaidToTotal();
+                            },
                           )),
                     ],
                   ),
@@ -332,9 +345,65 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                       controller: _discountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(labelText: 'Discount (Rs.)'),
+                      onChanged: (v) {
+                        setState(() {});
+                        _syncPaidToTotal();
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _notesController,
+                      decoration: const InputDecoration(labelText: 'Notes'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (customerDue > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '${selectedCustomer?.name ?? 'Customer'} due: ${Formatters.currency(customerDue)}',
+                          style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.danger),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _paidController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Paid Payment (Rs.)',
+                        prefixIcon: Icon(Icons.payments_outlined),
+                        helperText: 'Amount received now',
+                      ),
+                      onChanged: (v) {
+                        _paidAuto = false;
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
                   Expanded(
                     child: TextFormField(
                       controller: _notesController,
@@ -361,13 +430,24 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                       bold: true,
                       valueColor: AppColors.primary,
                     ),
+                    _SummaryRow(
+                      label: 'Paid Now',
+                      value: Formatters.currency(paid.clamp(0, total)),
+                      valueColor: AppColors.success,
+                    ),
+                    _SummaryRow(
+                      label: 'New Due',
+                      value: Formatters.currency(newDue),
+                      bold: true,
+                      valueColor: newDue > 0 ? AppColors.danger : AppColors.success,
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
               LoadingButton(
                 loading: loading,
-                label: 'Complete Sale',
+                label: newDue > 0 ? 'Complete Sale (Due ${Formatters.currency(newDue)})' : 'Complete Sale',
                 icon: Icons.point_of_sale,
                 onPressed: _cart.isEmpty ? null : _submit,
               ),            ],
@@ -385,6 +465,18 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
       }
       _selectedProduct = null;
     });
+    _syncPaidToTotal();
+  }
+
+  void _syncPaidToTotal() {
+    if (!_paidAuto) return;
+    final subtotal = _cart.fold<double>(0, (a, c) => a + c.lineTotal);
+    final discount = double.tryParse(_discountController.text.trim()) ?? 0;
+    final total = (subtotal - discount).clamp(0, double.infinity);
+    final current = double.tryParse(_paidController.text.trim()) ?? 0;
+    if ((current - total).abs() > 0.005) {
+      _paidController.text = total == 0 ? '' : total.toStringAsFixed(2);
+    }
   }
 
   Future<void> _submit() async {
@@ -410,6 +502,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
           discount: double.tryParse(_discountController.text.trim()) ?? 0,
           paymentMethod: _paymentMethod ?? 'cash',
           notes: _notesController.text.trim(),
+          paidAmount: double.tryParse(_paidController.text.trim()) ?? 0,
           shopId: _shopId,
         );
     if (!mounted) return;

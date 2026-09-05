@@ -7,8 +7,8 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Server base URL.
-  // Local backend for testing (Android emulator reaches host via 10.0.2.2).
-  static const String baseUrl = 'http://10.0.2.2:5000/api';
+  // Production backend.
+  static const String baseUrl = 'https://carpetapi.interacts.uk/api';
 
   static const String currencySymbol = 'Rs.';
 

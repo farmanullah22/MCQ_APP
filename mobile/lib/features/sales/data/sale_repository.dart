@@ -44,6 +44,7 @@ class SaleRepository {
     String paymentMethod = 'cash',
     String notes = '',
     String? shopId,
+    double paidAmount = 0,
   }) async {
     final res = await _api.request('POST', '/sales', data: {
       'customerName': customerName,
@@ -52,6 +53,7 @@ class SaleRepository {
       'discount': discount,
       'paymentMethod': paymentMethod,
       'notes': notes,
+      'paidAmount': paidAmount,
       'shopId': ?shopId,
     });
     return Sale.fromJson(res['data'] as Map<String, dynamic>);

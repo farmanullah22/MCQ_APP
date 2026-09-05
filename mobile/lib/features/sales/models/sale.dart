@@ -38,6 +38,8 @@ class Sale {
   final double subtotal;
   final double discount;
   final double totalAmount;
+  final double paidAmount;
+  final double dueAmount;
   final double profit;
   final String paymentMethod;
   final String notes;
@@ -56,6 +58,8 @@ class Sale {
     this.subtotal = 0,
     this.discount = 0,
     this.totalAmount = 0,
+    this.paidAmount = 0,
+    this.dueAmount = 0,
     this.profit = 0,
     this.paymentMethod = 'cash',
     this.notes = '',
@@ -98,6 +102,8 @@ class Sale {
       subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0,
       discount: (json['discount'] as num?)?.toDouble() ?? 0,
       totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
+      paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0,
+      dueAmount: (json['dueAmount'] as num?)?.toDouble() ?? 0,
       profit: (json['profit'] as num?)?.toDouble() ?? 0,
       paymentMethod: json['paymentMethod']?.toString() ?? 'cash',
       notes: json['notes']?.toString() ?? '',

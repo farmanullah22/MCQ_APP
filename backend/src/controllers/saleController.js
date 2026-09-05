@@ -57,7 +57,7 @@ const getSale = asyncHandler(async (req, res) => {
 });
 
 const createSale = asyncHandler(async (req, res) => {
-  const { customerName, customerPhone, items, discount, paymentMethod, notes } = req.body;
+  const { customerName, customerPhone, items, discount, paymentMethod, notes, paidAmount } = req.body;
   if (!items || !Array.isArray(items) || items.length === 0) {
     throw new ApiError(400, 'At least one product item is required.');
   }
@@ -104,6 +104,10 @@ const createSale = asyncHandler(async (req, res) => {
   const discountValue = Number(discount) || 0;
   if (discountValue > subtotal) throw new ApiError(400, 'Discount cannot exceed subtotal.');
 
+  const totalAmount = subtotal - discountValue;
+  const paidValue = Math.min(Math.max(Number(paidAmount) || 0, 0), totalAmount);
+  const dueValue = totalAmount - paidValue;
+
   const invoiceNo = await generateInvoiceNo();
   const sale = await Sale.create({
     invoiceNo,
@@ -113,7 +117,9 @@ const createSale = asyncHandler(async (req, res) => {
     items: saleItems,
     subtotal,
     discount: discountValue,
-    totalAmount: subtotal - discountValue,
+    totalAmount,
+    paidAmount: paidValue,
+    dueAmount: dueValue,
     profit,
     paymentMethod: paymentMethod || 'cash',
     notes: notes || '',
@@ -157,12 +163,21 @@ const createSale = asyncHandler(async (req, res) => {
       customer.totalSpent += sale.totalAmount;
       customer.purchaseCount += 1;
       customer.lastPurchaseAt = new Date();
-      if (sale.paymentMethod === 'credit') {
-        customer.balance += sale.totalAmount;
+      if (sale.dueAmount > 0) {
+        customer.balance += sale.dueAmount;
         customer.transactions.push({
-          amount: sale.totalAmount,
+          amount: sale.dueAmount,
           type: 'charge',
-          note: `Credit sale ${invoiceNo}`,
+          note: `Sale ${invoiceNo} (paid ${paidValue}, due ${dueValue})`,
+          date: new Date(),
+          by: req.user._id,
+        });
+      }
+      if (sale.paidAmount > 0) {
+        customer.transactions.push({
+          amount: sale.paidAmount,
+          type: 'payment',
+          note: `Payment received on sale ${invoiceNo}`,
           date: new Date(),
           by: req.user._id,
         });

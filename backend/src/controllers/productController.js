@@ -66,7 +66,8 @@ const calcQuantityAndCost = (body) => {
     const h = Number(body.carpetHeight) || 0;
     const pieces = Number(body.carpetPieces) || 0;
     const costPerSqft = Number(body.costPerSqft) || 0;
-    return { quantity: pieces, costPrice: w * h * pieces * costPerSqft };
+    const qty = w * h * pieces;
+    return { quantity: qty, costPrice: qty * costPerSqft };
   }
   if (pt === 'qaleen') {
     if (Array.isArray(body.qaleenSizes) && body.qaleenSizes.length > 0) {

@@ -140,7 +140,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   int get _computedQuantity {
     switch (_productType) {
       case 'carpet':
-        return int.tryParse(_carpetPieces.text) ?? 0;
+        final w = double.tryParse(_carpetWidth.text) ?? 0;
+        final h = double.tryParse(_carpetHeight.text) ?? 0;
+        final pieces = int.tryParse(_carpetPieces.text) ?? 0;
+        return (w * h * pieces).round();
       case 'qaleen':
         if (_qaleenSizes.isNotEmpty) {
           return _qaleenSizes.fold(0, (sum, s) => sum + s.pieces);
@@ -581,7 +584,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       case 'carpet':
         final w = double.tryParse(_carpetWidth.text) ?? 0;
         final h = double.tryParse(_carpetHeight.text) ?? 0;
-        costLabel = '${w}m x ${h}m x $qty pcs x ${Formatters.currency(double.tryParse(_costPerSqft.text) ?? 0)}/sqft';
+        final pcs = int.tryParse(_carpetPieces.text) ?? 0;
+        costLabel = '$qty sqft total (${w}m x ${h}m x $pcs) x ${Formatters.currency(double.tryParse(_costPerSqft.text) ?? 0)}/sqft';
         break;
       case 'qaleen':
         costLabel = '$qty pieces x ${Formatters.currency(double.tryParse(_costPerPiece.text) ?? 0)}/piece';
@@ -593,13 +597,15 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         costLabel = '';
     }
 
+    final qtyLabel = _productType == 'carpet' ? 'Total stock: $qty sqft' : 'Quantity: $qty';
+
     return Row(
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Quantity: $qty', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(qtyLabel, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 2),
               Text(costLabel, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
             ],
