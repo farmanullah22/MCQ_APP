@@ -33,7 +33,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late final TextEditingController _brand;
   late final TextEditingController _supplier;
   late final TextEditingController _color;
-  late final TextEditingController _size;
   late final TextEditingController _threshold;
   late final TextEditingController _description;
 
@@ -68,7 +67,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _brand = TextEditingController(text: p?.brand ?? '');
     _supplier = TextEditingController(text: p?.supplier ?? '');
     _color = TextEditingController(text: p?.color ?? '');
-    _size = TextEditingController(text: p?.size ?? '');
     _threshold = TextEditingController(text: p != null ? '${p.lowStockThreshold}' : '5');
     _description = TextEditingController(text: p?.description ?? '');
     _categoryId = p?.categoryId;
@@ -123,7 +121,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _brand.dispose();
     _supplier.dispose();
     _color.dispose();
-    _size.dispose();
     _threshold.dispose();
     _description.dispose();
     _carpetWidth.dispose();
@@ -258,7 +255,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       'brand': _brand.text.trim(),
       'supplier': _supplierName ?? _supplier.text.trim(),
       'color': _color.text.trim(),
-      'size': _size.text.trim(),
       'productType': _productType,
       'lowStockThreshold': int.tryParse(_threshold.text.trim()) ?? 5,
       'description': _description.text.trim(),
@@ -384,22 +380,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 }),
               ),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _color,
-                      decoration: const InputDecoration(labelText: 'Color', prefixIcon: Icon(Icons.color_lens_outlined)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _size,
-                      decoration: const InputDecoration(labelText: 'Size', prefixIcon: Icon(Icons.straighten)),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _color,
+                decoration: const InputDecoration(labelText: 'Color', prefixIcon: Icon(Icons.color_lens_outlined)),
               ),
               const SizedBox(height: 18),
 
