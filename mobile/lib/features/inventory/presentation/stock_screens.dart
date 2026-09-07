@@ -45,7 +45,9 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
 
   Future<void> _loadSuppliers() async {
     try {
-      final supplierPage = await ref.read(supplierRepositoryProvider).getSuppliers(limit: 200);
+      final supplierPage = await ref
+          .read(supplierRepositoryProvider)
+          .getSuppliers(limit: 200);
       if (!mounted) return;
       setState(() => _suppliers = supplierPage.suppliers);
     } catch (_) {}
@@ -62,8 +64,13 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(stockMutationControllerProvider.select((s) => s.loading));
-    final products = widget.products ?? ref.watch(productListControllerProvider).data.value?.products ?? const [];
+    final loading = ref.watch(
+      stockMutationControllerProvider.select((s) => s.loading),
+    );
+    final products =
+        widget.products ??
+        ref.watch(productListControllerProvider).data.value?.products ??
+        const [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stock In')),
@@ -76,13 +83,21 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
               DropdownButtonFormField<String>(
                 initialValue: _productId,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Product', prefixIcon: Icon(Icons.carpenter_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Product',
+                  prefixIcon: Icon(Icons.carpenter_outlined),
+                ),
                 items: products
-                    .map((p) => DropdownMenuItem(
-                          value: (p as dynamic).id.toString(),
-                          child: Text('${p.name} (${p.quantity} in stock)',
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ))
+                    .map(
+                      (p) => DropdownMenuItem(
+                        value: (p as dynamic).id.toString(),
+                        child: Text(
+                          '${p.name} (${p.quantity} in stock)',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _productId = v),
                 validator: (v) => v == null ? 'Select a product' : null,
@@ -94,10 +109,14 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                 validator: (v) {
                   final e = Validators.positiveNumber(v);
                   if (e != null) return e;
-                  if (int.tryParse(v!.trim()) == 0) return 'Quantity must be greater than 0';
+                  if (int.tryParse(v!.trim()) == 0)
+                    return 'Quantity must be greater than 0';
                   return null;
                 },
-                decoration: const InputDecoration(labelText: 'Quantity', prefixIcon: Icon(Icons.add_box_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  prefixIcon: Icon(Icons.add_box_outlined),
+                ),
               ),
               const SizedBox(height: 14),
               Row(
@@ -113,34 +132,63 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                       items: [
                         const DropdownMenuItem(
                           value: '',
-                          child: Text('Select Supplier', style: TextStyle(color: Colors.grey)),
+                          child: Text(
+                            'Select Supplier',
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ),
                         ..._suppliers
-                            .where((s) => _supplierSearch.isEmpty ||
-                                s.name.toLowerCase().contains(_supplierSearch.toLowerCase()))
-                            .map((s) => DropdownMenuItem(
-                                  value: s.id,
-                                  child: Text(s.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-                                )),
+                            .where(
+                              (s) =>
+                                  _supplierSearch.isEmpty ||
+                                  s.name.toLowerCase().contains(
+                                    _supplierSearch.toLowerCase(),
+                                  ),
+                            )
+                            .map(
+                              (s) => DropdownMenuItem(
+                                value: s.id,
+                                child: Text(
+                                  s.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                         const DropdownMenuItem(
                           value: '___add_new___',
                           child: Row(
                             children: [
-                              Icon(Icons.add_circle_outline, size: 20, color: Colors.green),
+                              Icon(
+                                Icons.add_circle_outline,
+                                size: 20,
+                                color: Colors.green,
+                              ),
                               SizedBox(width: 8),
-                              Text('Add New Supplier', style: TextStyle(color: Colors.green, fontWeight: FontWeight.w500)),
+                              Text(
+                                'Add New Supplier',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         const DropdownMenuItem(
                           value: '___other___',
-                          child: Text('Other (type manually)', style: TextStyle(fontStyle: FontStyle.italic)),
+                          child: Text(
+                            'Other (type manually)',
+                            style: TextStyle(fontStyle: FontStyle.italic),
+                          ),
                         ),
                       ],
                       onChanged: (v) async {
                         if (v == '___add_new___') {
                           final added = await Navigator.of(context).push<bool>(
-                            MaterialPageRoute(builder: (_) => const SupplierFormScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const SupplierFormScreen(),
+                            ),
                           );
                           if (added == true && mounted) {
                             await _loadSuppliers();
@@ -166,7 +214,9 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                             _selectedSupplier = null;
                           } else {
                             _selectedSupplierId = v;
-                            _selectedSupplier = _suppliers.firstWhere((s) => s.id == v);
+                            _selectedSupplier = _suppliers.firstWhere(
+                              (s) => s.id == v,
+                            );
                           }
                         });
                       },
@@ -218,7 +268,10 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'Notes', alignLabelWithHint: true),
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  alignLabelWithHint: true,
+                ),
               ),
               const SizedBox(height: 24),
               LoadingButton(
@@ -233,7 +286,9 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                   } else if (_selectedSupplier != null) {
                     supplierName = _selectedSupplier!.name;
                   }
-                  final ok = await ref.read(stockMutationControllerProvider.notifier).stockIn(
+                  final ok = await ref
+                      .read(stockMutationControllerProvider.notifier)
+                      .stockIn(
                         productId: _productId!,
                         quantity: int.parse(_quantityController.text.trim()),
                         supplier: supplierName,
@@ -241,11 +296,18 @@ class _StockInScreenState extends ConsumerState<StockInScreen> {
                       );
                   if (!context.mounted) return;
                   if (ok) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock added successfully')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Stock added successfully')),
+                    );
                     Navigator.of(context).pop();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(ref.read(stockMutationControllerProvider).error ?? 'Stock in failed')),
+                      SnackBar(
+                        content: Text(
+                          ref.read(stockMutationControllerProvider).error ??
+                              'Stock in failed',
+                        ),
+                      ),
                     );
                   }
                 },
@@ -284,8 +346,13 @@ class _StockOutScreenState extends ConsumerState<StockOutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(stockMutationControllerProvider.select((s) => s.loading));
-    final products = widget.products ?? ref.watch(productListControllerProvider).data.value?.products ?? const [];
+    final loading = ref.watch(
+      stockMutationControllerProvider.select((s) => s.loading),
+    );
+    final products =
+        widget.products ??
+        ref.watch(productListControllerProvider).data.value?.products ??
+        const [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stock Out')),
@@ -297,13 +364,21 @@ class _StockOutScreenState extends ConsumerState<StockOutScreen> {
             children: [
               DropdownButtonFormField<String>(
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Product', prefixIcon: Icon(Icons.carpenter_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Product',
+                  prefixIcon: Icon(Icons.carpenter_outlined),
+                ),
                 items: products
-                    .map((p) => DropdownMenuItem(
-                          value: (p as dynamic).id.toString(),
-                          child: Text('${p.name} (${p.quantity} in stock)',
-                              maxLines: 1, overflow: TextOverflow.ellipsis),
-                        ))
+                    .map(
+                      (p) => DropdownMenuItem(
+                        value: (p as dynamic).id.toString(),
+                        child: Text(
+                          '${p.name} (${p.quantity} in stock)',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _productId = v),
                 validator: (v) => v == null ? 'Select a product' : null,
@@ -315,21 +390,31 @@ class _StockOutScreenState extends ConsumerState<StockOutScreen> {
                 validator: (v) {
                   final e = Validators.positiveNumber(v);
                   if (e != null) return e;
-                  if (int.tryParse(v!.trim()) == 0) return 'Quantity must be greater than 0';
+                  if (int.tryParse(v!.trim()) == 0)
+                    return 'Quantity must be greater than 0';
                   return null;
                 },
-                decoration: const InputDecoration(labelText: 'Quantity', prefixIcon: Icon(Icons.indeterminate_check_box_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  prefixIcon: Icon(Icons.indeterminate_check_box_outlined),
+                ),
               ),
               const SizedBox(height: 14),
               TextFormField(
                 controller: _reasonController,
-                decoration: const InputDecoration(labelText: 'Reason (e.g. damaged, sample)', prefixIcon: Icon(Icons.info_outline)),
+                decoration: const InputDecoration(
+                  labelText: 'Reason (e.g. damaged, sample)',
+                  prefixIcon: Icon(Icons.info_outline),
+                ),
               ),
               const SizedBox(height: 14),
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'Notes', alignLabelWithHint: true),
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  alignLabelWithHint: true,
+                ),
               ),
               const SizedBox(height: 24),
               LoadingButton(
@@ -338,7 +423,9 @@ class _StockOutScreenState extends ConsumerState<StockOutScreen> {
                 icon: Icons.arrow_upward,
                 onPressed: () async {
                   if (!_formKey.currentState!.validate()) return;
-                  final ok = await ref.read(stockMutationControllerProvider.notifier).stockOut(
+                  final ok = await ref
+                      .read(stockMutationControllerProvider.notifier)
+                      .stockOut(
                         productId: _productId!,
                         quantity: int.parse(_quantityController.text.trim()),
                         reason: _reasonController.text.trim(),
@@ -346,11 +433,20 @@ class _StockOutScreenState extends ConsumerState<StockOutScreen> {
                       );
                   if (!context.mounted) return;
                   if (ok) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock removed successfully')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Stock removed successfully'),
+                      ),
+                    );
                     Navigator.of(context).pop();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(ref.read(stockMutationControllerProvider).error ?? 'Stock out failed')),
+                      SnackBar(
+                        content: Text(
+                          ref.read(stockMutationControllerProvider).error ??
+                              'Stock out failed',
+                        ),
+                      ),
                     );
                   }
                 },
@@ -387,14 +483,21 @@ class LowStockScreen extends ConsumerWidget {
               final p = low[i];
               return Card(
                 child: ListTile(
-                  leading: const Icon(Icons.warning_amber, color: AppColors.danger),
+                  leading: const Icon(
+                    Icons.warning_amber,
+                    color: AppColors.danger,
+                  ),
                   title: Text(p.name),
-                  subtitle: Text('Only ${p.quantity} left (threshold ${p.lowStockThreshold})'),
+                  subtitle: Text(
+                    'Only ${p.quantity} left (threshold ${p.lowStockThreshold})',
+                  ),
                   trailing: isAdmin
                       ? null
                       : TextButton(
                           onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => StockInScreen(productId: p.id)),
+                            MaterialPageRoute(
+                              builder: (_) => StockInScreen(productId: p.id),
+                            ),
                           ),
                           child: const Text('Restock'),
                         ),
@@ -412,7 +515,8 @@ class StockTransferScreen extends ConsumerStatefulWidget {
   const StockTransferScreen({super.key});
 
   @override
-  ConsumerState<StockTransferScreen> createState() => _StockTransferScreenState();
+  ConsumerState<StockTransferScreen> createState() =>
+      _StockTransferScreenState();
 }
 
 class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
@@ -486,10 +590,14 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
       _productId = null;
     });
     try {
-      final products = await ref.read(inventoryRepositoryProvider).shopProducts(shopId);
+      final products = await ref
+          .read(inventoryRepositoryProvider)
+          .shopProducts(shopId);
       if (!mounted) return;
       setState(() {
-        _products = products.where((p) => ((p['quantity'] as num?)?.toInt() ?? 0) > 0).toList();
+        _products = products
+            .where((p) => ((p['quantity'] as num?)?.toInt() ?? 0) > 0)
+            .toList();
         _productsLoading = false;
       });
     } catch (e) {
@@ -504,7 +612,9 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loading = ref.watch(stockMutationControllerProvider.select((s) => s.loading));
+    final loading = ref.watch(
+      stockMutationControllerProvider.select((s) => s.loading),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Stock Transfer')),
@@ -520,7 +630,11 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else if (_shopsError != null)
-                ErrorView(message: _shopsError!, onRetry: _loadShops, compact: true)
+                ErrorView(
+                  message: _shopsError!,
+                  onRetry: _loadShops,
+                  compact: true,
+                )
               else ...[
                 DropdownButtonFormField<String>(
                   initialValue: _fromShopId,
@@ -530,11 +644,16 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                     prefixIcon: Icon(Icons.outbox_outlined),
                   ),
                   items: _shops
-                      .map((s) => DropdownMenuItem(
-                            value: s['id'].toString(),
-                            child: Text(s['name'].toString(),
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ))
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s['id'].toString(),
+                          child: Text(
+                            s['name'].toString(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() {
                     _fromShopId = v;
@@ -552,14 +671,20 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                   ),
                   items: _shops
                       .where((s) => s['id'].toString() != _fromShopId)
-                      .map((s) => DropdownMenuItem(
-                            value: s['id'].toString(),
-                            child: Text(s['name'].toString(),
-                                maxLines: 1, overflow: TextOverflow.ellipsis),
-                          ))
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s['id'].toString(),
+                          child: Text(
+                            s['name'].toString(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _toShopId = v),
-                  validator: (v) => v == null ? 'Select a destination shop' : null,
+                  validator: (v) =>
+                      v == null ? 'Select a destination shop' : null,
                 ),
                 const SizedBox(height: 14),
                 if (_productsLoading)
@@ -568,7 +693,11 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (_productsError != null)
-                  ErrorView(message: _productsError!, onRetry: _loadProducts, compact: true)
+                  ErrorView(
+                    message: _productsError!,
+                    onRetry: _loadProducts,
+                    compact: true,
+                  )
                 else
                   DropdownButtonFormField<String>(
                     initialValue: _productId,
@@ -578,17 +707,20 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                       prefixIcon: Icon(Icons.carpenter_outlined),
                     ),
                     items: _products
-                        .map((p) => DropdownMenuItem(
-                              value: (p['_id'] ?? p['id']).toString(),
-                              child: Text(
-                                '${p['name']} (${p['quantity']} in stock)',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ))
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: (p['_id'] ?? p['id']).toString(),
+                            child: Text(
+                              '${p['name']} (${p['quantity']} in stock)',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) => setState(() => _productId = v),
-                    validator: (v) => v == null ? 'Select a product to transfer' : null,
+                    validator: (v) =>
+                        v == null ? 'Select a product to transfer' : null,
                   ),
               ],
               const SizedBox(height: 14),
@@ -596,13 +728,19 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                 controller: _quantityController,
                 keyboardType: TextInputType.number,
                 validator: Validators.positiveNumber,
-                decoration: const InputDecoration(labelText: 'Quantity', prefixIcon: Icon(Icons.swap_horiz_rounded)),
+                decoration: const InputDecoration(
+                  labelText: 'Quantity',
+                  prefixIcon: Icon(Icons.swap_horiz_rounded),
+                ),
               ),
               const SizedBox(height: 14),
               TextFormField(
                 controller: _notesController,
                 maxLines: 2,
-                decoration: const InputDecoration(labelText: 'Notes', alignLabelWithHint: true),
+                decoration: const InputDecoration(
+                  labelText: 'Notes',
+                  alignLabelWithHint: true,
+                ),
               ),
               const SizedBox(height: 24),
               LoadingButton(
@@ -611,7 +749,9 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                 icon: Icons.swap_horiz_rounded,
                 onPressed: () async {
                   if (!_formKey.currentState!.validate()) return;
-                  final ok = await ref.read(stockMutationControllerProvider.notifier).transfer(
+                  final ok = await ref
+                      .read(stockMutationControllerProvider.notifier)
+                      .transfer(
                         fromShopId: _fromShopId!,
                         toShopId: _toShopId!,
                         productId: _productId!,
@@ -620,11 +760,20 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                       );
                   if (!context.mounted) return;
                   if (ok) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stock transferred successfully')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Stock transferred successfully'),
+                      ),
+                    );
                     Navigator.of(context).pop();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(ref.read(stockMutationControllerProvider).error ?? 'Stock transfer failed')),
+                      SnackBar(
+                        content: Text(
+                          ref.read(stockMutationControllerProvider).error ??
+                              'Stock transfer failed',
+                        ),
+                      ),
                     );
                   }
                 },

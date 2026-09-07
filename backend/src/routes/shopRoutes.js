@@ -4,6 +4,7 @@ const { restrictTo } = require('../middleware/auth');
 const router = express.Router();
 
 router.get('/', shopController.listShops);
+router.get('/:id/overview', restrictTo('admin'), shopController.getShopOverview);
 router.get('/:id', shopController.getShop);
 
 router.post('/', restrictTo('admin'), shopController.createShop);

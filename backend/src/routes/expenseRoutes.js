@@ -1,9 +1,9 @@
 const express = require('express');
 const expenseController = require('../controllers/expenseController');
-const { restrictTo } = require('../middleware/auth');
+const { restrictTo, scopedShop } = require('../middleware/auth');
 const router = express.Router();
 
-router.get('/', expenseController.listExpenses);
+router.get('/', scopedShop, expenseController.listExpenses);
 
 // Admin is view-only. Expense mutations are manager (operational) actions.
 router.post('/', restrictTo('manager'), expenseController.createExpense);

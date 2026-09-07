@@ -289,3 +289,265 @@ class ShopSummary {
         manager: json['manager']?.toString() ?? '',
       );
 }
+
+class ShopOverviewInfo {
+  final String id;
+  final String name;
+  final String address;
+  final String contactNumber;
+  final String managerName;
+  final String managerEmail;
+  final String managerPhone;
+
+  const ShopOverviewInfo({
+    required this.id,
+    required this.name,
+    this.address = '',
+    this.contactNumber = '',
+    this.managerName = '—',
+    this.managerEmail = '',
+    this.managerPhone = '',
+  });
+
+  factory ShopOverviewInfo.fromJson(Map<String, dynamic> json) => ShopOverviewInfo(
+        id: (json['id'] ?? json['_id']).toString(),
+        name: json['name']?.toString() ?? '',
+        address: json['address']?.toString() ?? '',
+        contactNumber: json['contactNumber']?.toString() ?? '',
+        managerName: json['managerName']?.toString() ?? '—',
+        managerEmail: json['managerEmail']?.toString() ?? '',
+        managerPhone: json['managerPhone']?.toString() ?? '',
+      );
+}
+
+class OverviewCustomer {
+  final String id;
+  final String name;
+  final String phone;
+  final double balance;
+  final double totalSpent;
+  final int purchaseCount;
+  final DateTime? lastPurchaseAt;
+
+  const OverviewCustomer({
+    required this.id,
+    required this.name,
+    this.phone = '',
+    this.balance = 0,
+    this.totalSpent = 0,
+    this.purchaseCount = 0,
+    this.lastPurchaseAt,
+  });
+
+  factory OverviewCustomer.fromJson(Map<String, dynamic> json) => OverviewCustomer(
+        id: (json['id'] ?? json['_id']).toString(),
+        name: json['name']?.toString() ?? 'Customer',
+        phone: json['phone']?.toString() ?? '',
+        balance: (json['balance'] as num?)?.toDouble() ?? 0,
+        totalSpent: (json['totalSpent'] as num?)?.toDouble() ?? 0,
+        purchaseCount: (json['purchaseCount'] as num?)?.toInt() ?? 0,
+        lastPurchaseAt: json['lastPurchaseAt'] != null
+            ? DateTime.tryParse(json['lastPurchaseAt'].toString())
+            : null,
+      );
+}
+
+class OverviewProduct {
+  final String id;
+  final String name;
+  final String sku;
+  final String productType;
+  final double quantity;
+  final double costPrice;
+  final double stockValue;
+  final double lowStockThreshold;
+  final bool isLowStock;
+
+  const OverviewProduct({
+    required this.id,
+    required this.name,
+    this.sku = '',
+    this.productType = 'qaleen',
+    this.quantity = 0,
+    this.costPrice = 0,
+    this.stockValue = 0,
+    this.lowStockThreshold = 0,
+    this.isLowStock = false,
+  });
+
+  factory OverviewProduct.fromJson(Map<String, dynamic> json) => OverviewProduct(
+        id: (json['id'] ?? json['_id']).toString(),
+        name: json['name']?.toString() ?? 'Product',
+        sku: json['sku']?.toString() ?? '',
+        productType: json['productType']?.toString() ?? 'qaleen',
+        quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
+        costPrice: (json['costPrice'] as num?)?.toDouble() ?? 0,
+        stockValue: (json['stockValue'] as num?)?.toDouble() ?? 0,
+        lowStockThreshold: (json['lowStockThreshold'] as num?)?.toDouble() ?? 0,
+        isLowStock: json['isLowStock'] == true,
+      );
+}
+
+class OverviewSale {
+  final String id;
+  final String invoiceNo;
+  final String customerName;
+  final double totalAmount;
+  final double paidAmount;
+  final double dueAmount;
+  final DateTime? createdAt;
+
+  const OverviewSale({
+    required this.id,
+    this.invoiceNo = '',
+    this.customerName = 'Walk-in Customer',
+    this.totalAmount = 0,
+    this.paidAmount = 0,
+    this.dueAmount = 0,
+    this.createdAt,
+  });
+
+  factory OverviewSale.fromJson(Map<String, dynamic> json) => OverviewSale(
+        id: (json['id'] ?? json['_id']).toString(),
+        invoiceNo: json['invoiceNo']?.toString() ?? '',
+        customerName: json['customerName']?.toString() ?? 'Walk-in Customer',
+        totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
+        paidAmount: (json['paidAmount'] as num?)?.toDouble() ?? 0,
+        dueAmount: (json['dueAmount'] as num?)?.toDouble() ?? 0,
+        createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      );
+}
+
+class OverviewExpense {
+  final String id;
+  final String category;
+  final double amount;
+  final String description;
+  final DateTime? date;
+
+  const OverviewExpense({
+    required this.id,
+    this.category = 'other',
+    this.amount = 0,
+    this.description = '',
+    this.date,
+  });
+
+  factory OverviewExpense.fromJson(Map<String, dynamic> json) => OverviewExpense(
+        id: (json['id'] ?? json['_id']).toString(),
+        category: json['category']?.toString() ?? 'other',
+        amount: (json['amount'] as num?)?.toDouble() ?? 0,
+        description: json['description']?.toString() ?? '',
+        date: json['date'] != null ? DateTime.tryParse(json['date'].toString()) : null,
+      );
+}
+
+class OverviewManager {
+  final String name;
+  final String email;
+  final String phone;
+
+  const OverviewManager({this.name = '', this.email = '', this.phone = ''});
+
+  factory OverviewManager.fromJson(Map<String, dynamic> json) => OverviewManager(
+        name: json['name']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        phone: json['phone']?.toString() ?? '',
+      );
+}
+
+class ShopOverview {
+  final ShopOverviewInfo shop;
+  final ShopOverviewCards cards;
+  final List<OverviewCustomer> customers;
+  final List<OverviewProduct> products;
+  final List<LowStockProduct> lowStock;
+  final List<OverviewSale> recentSales;
+  final List<OverviewExpense> recentExpenses;
+  final List<OverviewManager> managers;
+
+  const ShopOverview({
+    this.shop = const ShopOverviewInfo(id: '', name: ''),
+    this.cards = const ShopOverviewCards(),
+    this.customers = const [],
+    this.products = const [],
+    this.lowStock = const [],
+    this.recentSales = const [],
+    this.recentExpenses = const [],
+    this.managers = const [],
+  });
+
+  factory ShopOverview.fromJson(Map<String, dynamic> json) {
+    final shop = json['shop'] as Map<String, dynamic>? ?? const {};
+    return ShopOverview(
+      shop: ShopOverviewInfo.fromJson(shop),
+      cards: ShopOverviewCards.fromJson(json['cards'] as Map<String, dynamic>? ?? const {}),
+      customers: (json['customers'] as List?)
+              ?.map((e) => OverviewCustomer.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      products: (json['products'] as List?)
+              ?.map((e) => OverviewProduct.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      lowStock: (json['lowStock'] as List?)
+              ?.map((e) => LowStockProduct.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      recentSales: (json['recentSales'] as List?)
+              ?.map((e) => OverviewSale.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      recentExpenses: (json['recentExpenses'] as List?)
+              ?.map((e) => OverviewExpense.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      managers: (json['managers'] as List?)
+              ?.map((e) => OverviewManager.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+  }
+}
+
+class ShopOverviewCards {
+  final int totalProducts;
+  final double totalStockValue;
+  final int lowStockCount;
+  final int customerCount;
+  final int supplierCount;
+  final double receivables;
+  final double salesToday;
+  final int salesTodayCount;
+  final double monthlyRevenue;
+  final double monthlyProfit;
+  final double monthlyExpenses;
+
+  const ShopOverviewCards({
+    this.totalProducts = 0,
+    this.totalStockValue = 0,
+    this.lowStockCount = 0,
+    this.customerCount = 0,
+    this.supplierCount = 0,
+    this.receivables = 0,
+    this.salesToday = 0,
+    this.salesTodayCount = 0,
+    this.monthlyRevenue = 0,
+    this.monthlyProfit = 0,
+    this.monthlyExpenses = 0,
+  });
+
+  factory ShopOverviewCards.fromJson(Map<String, dynamic> json) => ShopOverviewCards(
+        totalProducts: (json['totalProducts'] as num?)?.toInt() ?? 0,
+        totalStockValue: (json['totalStockValue'] as num?)?.toDouble() ?? 0,
+        lowStockCount: (json['lowStockCount'] as num?)?.toInt() ?? 0,
+        customerCount: (json['customerCount'] as num?)?.toInt() ?? 0,
+        supplierCount: (json['supplierCount'] as num?)?.toInt() ?? 0,
+        receivables: (json['receivables'] as num?)?.toDouble() ?? 0,
+        salesToday: (json['salesToday'] as num?)?.toDouble() ?? 0,
+        salesTodayCount: (json['salesTodayCount'] as num?)?.toInt() ?? 0,
+        monthlyRevenue: (json['monthlyRevenue'] as num?)?.toDouble() ?? 0,
+        monthlyProfit: (json['monthlyProfit'] as num?)?.toDouble() ?? 0,
+        monthlyExpenses: (json['monthlyExpenses'] as num?)?.toDouble() ?? 0,
+      );
+}

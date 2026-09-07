@@ -11,4 +11,9 @@ class DashboardRepository {
     });
     return DashboardData.fromJson(res['data'] as Map<String, dynamic>);
   }
+
+  Future<ShopOverview> getShopOverview(String shopId) async {
+    final res = await _api.request('GET', '/shops/$shopId/overview');
+    return ShopOverview.fromJson(res['data'] as Map<String, dynamic>);
+  }
 }

@@ -1,10 +1,10 @@
 const express = require('express');
 const productController = require('../controllers/productController');
-const { restrictTo } = require('../middleware/auth');
+const { restrictTo, scopedShop } = require('../middleware/auth');
 const router = express.Router();
 
-router.get('/', productController.listProducts);
-router.get('/low-stock', productController.lowStockProducts);
+router.get('/', scopedShop, productController.listProducts);
+router.get('/low-stock', scopedShop, productController.lowStockProducts);
 router.get('/:id', productController.getProduct);
 
 // Admin is view-only. Product mutations are manager (operational) actions.

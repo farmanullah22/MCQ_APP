@@ -19,9 +19,15 @@ class CustomerRepository {
   CustomerRepository(this._api);
   final ApiClient _api;
 
-  Future<CustomerPage> getCustomers({String search = '', int page = 1, int limit = 50}) async {
+  Future<CustomerPage> getCustomers({
+    String search = '',
+    int page = 1,
+    int limit = 50,
+    String? shopId,
+  }) async {
     final res = await _api.request('GET', '/customers', query: {
       'search': search.isEmpty ? null : search,
+      'shopId': ?shopId,
       'page': '$page',
       'limit': '$limit',
     });

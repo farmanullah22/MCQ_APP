@@ -1,9 +1,9 @@
 const express = require('express');
 const customerController = require('../controllers/customerController');
-const { restrictTo } = require('../middleware/auth');
+const { restrictTo, scopedShop } = require('../middleware/auth');
 const router = express.Router();
 
-router.get('/', customerController.listCustomers);
+router.get('/', scopedShop, customerController.listCustomers);
 router.get('/:id', customerController.getCustomer);
 
 // Customer records are manager (operational) actions; admin is view-only.

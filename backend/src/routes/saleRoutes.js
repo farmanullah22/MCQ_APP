@@ -1,9 +1,9 @@
 const express = require('express');
 const saleController = require('../controllers/saleController');
-const { restrictTo } = require('../middleware/auth');
+const { restrictTo, scopedShop } = require('../middleware/auth');
 const router = express.Router();
 
-router.get('/', saleController.listSales);
+router.get('/', scopedShop, saleController.listSales);
 router.get('/:id', saleController.getSale);
 
 // Admin is view-only. Sale mutations are manager (operational) actions.

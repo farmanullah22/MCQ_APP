@@ -1,9 +1,9 @@
 const express = require('express');
 const supplierController = require('../controllers/supplierController');
-const { restrictTo } = require('../middleware/auth');
+const { restrictTo, scopedShop } = require('../middleware/auth');
 const router = express.Router();
 
-router.get('/', supplierController.listSuppliers);
+router.get('/', scopedShop, supplierController.listSuppliers);
 router.get('/:id', supplierController.getSupplier);
 
 // Supplier records are manager (operational) actions; admin is view-only.

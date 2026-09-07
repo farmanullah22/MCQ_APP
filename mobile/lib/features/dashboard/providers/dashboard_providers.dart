@@ -99,3 +99,9 @@ final dashboardControllerProvider =
 final shopDetailProvider = FutureProvider.family<DashboardData, String>((ref, shopId) {
   return ref.watch(dashboardRepositoryProvider).getDashboard(shopId: shopId);
 });
+
+// Full branch command-center payload (customers, products, receivables,
+// staff, recent sales/expenses) for a single branch. Admin only.
+final shopOverviewProvider = FutureProvider.family<ShopOverview, String>((ref, shopId) {
+  return ref.watch(dashboardRepositoryProvider).getShopOverview(shopId);
+});
