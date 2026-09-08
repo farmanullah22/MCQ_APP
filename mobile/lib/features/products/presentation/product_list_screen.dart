@@ -10,6 +10,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../../inventory/presentation/stock_screens.dart';
 import '../models/product.dart';
 import '../providers/product_providers.dart';
+import 'product_detail_screen.dart';
 import 'product_form_screen.dart';
 
 class ProductListScreen extends ConsumerStatefulWidget {
@@ -126,7 +127,7 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
                       final product = page.products[index];
                       return _ProductCard(
                         product: product,
-                        onTap: isAdmin ? null : () => _openForm(context, product: product),
+                        onTap: isAdmin ? null : () => _openDetail(context, product: product),
                         onEdit: () => _openForm(context, product: product),
                         onStockIn: () => _openStockIn(context, product),
                         onDelete: () => _confirmDelete(context, product),
@@ -145,6 +146,12 @@ class _ProductListScreenState extends ConsumerState<ProductListScreen> {
   void _openForm(BuildContext context, {Product? product}) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => ProductFormScreen(product: product)),
+    );
+  }
+
+  void _openDetail(BuildContext context, {required Product product}) {
+    Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product)),
     );
   }
 
