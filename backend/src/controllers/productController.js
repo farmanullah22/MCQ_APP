@@ -89,7 +89,7 @@ const createProduct = asyncHandler(async (req, res) => {
     name, sku, barcode, category, brand, supplier, sellingPrice,
     lowStockThreshold, description, color, size, images,
     productType,
-    carpetWidth, carpetHeight, carpetPieces, costPerSqft,
+    carpetWidth, carpetHeight, carpetPieces, carpetPiecesData, costPerSqft,
     costPerPiece, qaleenSizes,
     meterLength, costPerMeter,
   } = req.body;
@@ -115,6 +115,7 @@ const createProduct = asyncHandler(async (req, res) => {
     carpetWidth: carpetWidth || 0,
     carpetHeight: carpetHeight || 0,
     carpetPieces: carpetPieces || 0,
+    carpetPiecesData: carpetPiecesData || [],
     costPerSqft: costPerSqft || 0,
     costPerPiece: costPerPiece || 0,
     qaleenSizes: qaleenSizes || [],
@@ -156,7 +157,7 @@ const updateProduct = asyncHandler(async (req, res) => {
     'name', 'sku', 'barcode', 'category', 'brand', 'supplier', 'sellingPrice',
     'lowStockThreshold', 'color', 'size', 'description', 'images',
     'productType',
-    'carpetWidth', 'carpetHeight', 'carpetPieces', 'costPerSqft',
+    'carpetWidth', 'carpetHeight', 'carpetPieces', 'carpetPiecesData', 'costPerSqft',
     'costPerPiece', 'qaleenSizes',
     'meterLength', 'costPerMeter',
   ];

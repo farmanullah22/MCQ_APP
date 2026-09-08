@@ -5,6 +5,17 @@ const qaleenSizeSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const carpetPieceSchema = new mongoose.Schema(
+  {
+    width: { type: Number, required: true },
+    height: { type: Number, required: true },
+    area: { type: Number, default: 0 },
+    color: { type: String, default: '' },
+    image: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -18,6 +29,7 @@ const productSchema = new mongoose.Schema(
     carpetWidth: { type: Number, default: 0 },
     carpetHeight: { type: Number, default: 0 },
     carpetPieces: { type: Number, default: 0 },
+    carpetPiecesData: { type: [carpetPieceSchema], default: [] },
     costPerSqft: { type: Number, default: 0 },
 
     costPerPiece: { type: Number, default: 0 },

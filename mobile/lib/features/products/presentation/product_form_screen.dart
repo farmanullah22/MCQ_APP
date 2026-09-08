@@ -15,6 +15,22 @@ import '../../suppliers/models/supplier.dart';
 import '../providers/product_providers.dart';
 import '../../../core/providers/repository_providers.dart';
 
+class _CarpetPiece {
+  final double width;
+  final double height;
+  final String color;
+  final Uint8List? imageBytes;
+
+  const _CarpetPiece({
+    required this.width,
+    required this.height,
+    this.color = '',
+    this.imageBytes,
+  });
+
+  double get area => width * height;
+}
+
 class ProductFormScreen extends ConsumerStatefulWidget {
   const ProductFormScreen({super.key, this.product});
 
@@ -28,11 +44,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _imagePicker = ImagePicker();
   late final TextEditingController _name;
-  late final TextEditingController _sku;
   late final TextEditingController _barcode;
   late final TextEditingController _brand;
   late final TextEditingController _supplier;
-  late final TextEditingController _color;
   late final TextEditingController _threshold;
   late final TextEditingController _description;
 
@@ -49,10 +63,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   late String _productType;
   List<QaleenSize> _qaleenSizes = [];
+  final List<_CarpetPiece> _carpetPieceDetails = [];
   String? _categoryId;
   bool _isEdit = false;
-  Uint8List? _imageBytes;
-  String? _existingImageUrl;
   List<Supplier> _suppliers = [];
   String? _supplierName;
 
@@ -62,11 +75,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     final p = widget.product;
     _isEdit = p != null;
     _name = TextEditingController(text: p?.name ?? '');
-    _sku = TextEditingController(text: p?.sku ?? '');
     _barcode = TextEditingController(text: p?.barcode ?? '');
     _brand = TextEditingController(text: p?.brand ?? '');
     _supplier = TextEditingController(text: p?.supplier ?? '');
-    _color = TextEditingController(text: p?.color ?? '');
     _threshold = TextEditingController(text: p != null ? '${p.lowStockThreshold}' : '5');
     _description = TextEditingController(text: p?.description ?? '');
     _categoryId = p?.categoryId;
@@ -77,22 +88,27 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _carpetPieces = TextEditingController(text: p != null && p.carpetPieces > 0 ? '${p.carpetPieces}' : '');
     _costPerSqft = TextEditingController(text: p != null && p.costPerSqft > 0 ? '${p.costPerSqft}' : '');
 
+    for (final piece in p?.carpetPiecesData ?? const <CarpetPieceData>[]) {
+      Uint8List? bytes;
+      if (piece.image.startsWith('data:image')) {
+        try {
+          bytes = base64.decode(piece.image.split(',').last);
+        } catch (_) {}
+      }
+      _carpetPieceDetails.add(_CarpetPiece(
+        width: piece.width,
+        height: piece.height,
+        color: piece.color,
+        imageBytes: bytes,
+      ));
+    }
+
     _qaleenQty = TextEditingController(text: p != null && p.productType == 'qaleen' && p.qaleenSizes.isEmpty ? '${p.quantity}' : '');
     _costPerPiece = TextEditingController(text: p != null && p.costPerPiece > 0 ? '${p.costPerPiece}' : '');
     _qaleenSizes = p?.qaleenSizes.toList() ?? [];
 
     _meterLength = TextEditingController(text: p != null && p.meterLength > 0 ? '${p.meterLength}' : '');
     _costPerMeter = TextEditingController(text: p != null && p.costPerMeter > 0 ? '${p.costPerMeter}' : '');
-
-    if (p != null && p.images.isNotEmpty) {
-      final img = p.images.first;
-      if (img.startsWith('data:image')) {
-        final base64Data = img.split(',').last;
-        _imageBytes = base64.decode(base64Data);
-      } else {
-        _existingImageUrl = img;
-      }
-    }
 
     _loadSuppliers();
   }
@@ -116,11 +132,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   @override
   void dispose() {
     _name.dispose();
-    _sku.dispose();
     _barcode.dispose();
     _brand.dispose();
     _supplier.dispose();
-    _color.dispose();
     _threshold.dispose();
     _description.dispose();
     _carpetWidth.dispose();
@@ -173,25 +187,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     }
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    final picked = await _imagePicker.pickImage(source: source, imageQuality: 80);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _imageBytes = bytes;
-        _existingImageUrl = null;
-      });
-    }
-  }
-
-  String? _buildBase64DataUrl() {
-    if (_imageBytes == null) return null;
-    final ext = _imageBytes!.length > 4 &&
-            _imageBytes![0] == 0x89 &&
-            _imageBytes![1] == 0x50
-        ? 'png'
-        : 'jpeg';
-    return 'data:image/$ext;base64,${base64.encode(_imageBytes!)}';
+  String _buildPieceImageDataUrl(Uint8List bytes) {
+    final ext = bytes.length > 4 && bytes[0] == 0x89 && bytes[1] == 0x50 ? 'png' : 'jpeg';
+    return 'data:image/$ext;base64,${base64.encode(bytes)}';
   }
 
   void _addQaleenSize() {
@@ -244,17 +242,142 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     );
   }
 
+  Future<void> _addCarpetPiece() async {
+    final wCtrl = TextEditingController();
+    final hCtrl = TextEditingController();
+    final colorCtrl = TextEditingController();
+    Uint8List? imageBytes;
+    var areaText = 'Total area: 0 sqft';
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            void refresh() {
+              final w = double.tryParse(wCtrl.text) ?? 0;
+              final h = double.tryParse(hCtrl.text) ?? 0;
+              areaText = 'Total area: ${(w * h).toStringAsFixed(2)} sqft';
+              setSheetState(() {});
+            }
+
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(ctx).viewInsets.bottom + 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Add Piece', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text('Piece ${_carpetPieceDetails.length + 1}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: wCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (_) => refresh(),
+                          decoration: const InputDecoration(labelText: 'Width (m)'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: hCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (_) => refresh(),
+                          decoration: const InputDecoration(labelText: 'Height (m)'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(areaText, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: colorCtrl,
+                    decoration: const InputDecoration(labelText: 'Color', prefixIcon: Icon(Icons.color_lens_outlined)),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (imageBytes != null)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.memory(imageBytes!, height: 60, width: 60, fit: BoxFit.cover),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await _imagePicker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                          if (picked != null) {
+                            final bytes = await picked.readAsBytes();
+                            setSheetState(() => imageBytes = bytes);
+                          }
+                        },
+                        icon: const Icon(Icons.photo_library_outlined, size: 18),
+                        label: const Text('Gallery'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await _imagePicker.pickImage(source: ImageSource.camera, imageQuality: 80);
+                          if (picked != null) {
+                            final bytes = await picked.readAsBytes();
+                            setSheetState(() => imageBytes = bytes);
+                          }
+                        },
+                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                        label: const Text('Camera'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+                    onPressed: () {
+                      final w = double.tryParse(wCtrl.text) ?? 0;
+                      final h = double.tryParse(hCtrl.text) ?? 0;
+                      if (w <= 0 || h <= 0) {
+                        ScaffoldMessenger.of(ctx).showSnackBar(
+                          const SnackBar(content: Text('Please enter valid width and height')),
+                        );
+                        return;
+                      }
+                      setState(() {
+                        _carpetPieceDetails.add(_CarpetPiece(
+                          width: w,
+                          height: h,
+                          color: colorCtrl.text.trim(),
+                          imageBytes: imageBytes,
+                        ));
+                      });
+                      Navigator.pop(ctx);
+                    },
+                    child: const Text('Add Piece'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final notifier = ref.read(productMutationControllerProvider.notifier);
     final data = <String, dynamic>{
       'name': _name.text.trim(),
-      'sku': _sku.text.trim(),
       'barcode': _barcode.text.trim(),
       'category': _categoryId,
       'brand': _brand.text.trim(),
       'supplier': _supplierName ?? _supplier.text.trim(),
-      'color': _color.text.trim(),
       'productType': _productType,
       'lowStockThreshold': int.tryParse(_threshold.text.trim()) ?? 5,
       'description': _description.text.trim(),
@@ -266,6 +389,16 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         data['carpetHeight'] = double.tryParse(_carpetHeight.text) ?? 0;
         data['carpetPieces'] = int.tryParse(_carpetPieces.text) ?? 0;
         data['costPerSqft'] = double.tryParse(_costPerSqft.text) ?? 0;
+        data['quantity'] = _computedQuantity;
+        if (_carpetPieceDetails.isNotEmpty) {
+          data['carpetPiecesData'] = _carpetPieceDetails.map((p) => {
+                'width': p.width,
+                'height': p.height,
+                'area': p.area,
+                'color': p.color,
+                if (p.imageBytes != null) 'image': _buildPieceImageDataUrl(p.imageBytes!),
+              }).toList();
+        }
         break;
       case 'qaleen':
         data['costPerPiece'] = double.tryParse(_costPerPiece.text) ?? 0;
@@ -280,11 +413,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         data['meterLength'] = double.tryParse(_meterLength.text) ?? 0;
         data['costPerMeter'] = double.tryParse(_costPerMeter.text) ?? 0;
         break;
-    }
-
-    final base64DataUrl = _buildBase64DataUrl();
-    if (base64DataUrl != null) {
-      data['images'] = [base64DataUrl];
     }
 
     final ok = _isEdit
@@ -333,22 +461,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               ),
               const SizedBox(height: 14),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _sku,
-                      decoration: const InputDecoration(labelText: 'SKU', prefixIcon: Icon(Icons.tag)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _barcode,
-                      decoration: const InputDecoration(labelText: 'Barcode', prefixIcon: Icon(Icons.qr_code_2)),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _barcode,
+                decoration: const InputDecoration(labelText: 'Barcode', prefixIcon: Icon(Icons.qr_code_2)),
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String?>(
@@ -379,11 +494,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                   _supplier.text = v ?? '';
                 }),
               ),
-              const SizedBox(height: 14),
-              TextFormField(
-                controller: _color,
-                decoration: const InputDecoration(labelText: 'Color', prefixIcon: Icon(Icons.color_lens_outlined)),
-              ),
               const SizedBox(height: 18),
 
               Container(
@@ -410,8 +520,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Low Stock Alert', prefixIcon: Icon(Icons.warning_amber_outlined)),
               ),
-              const SizedBox(height: 14),
-              _buildImageSection(),
               const SizedBox(height: 14),
               TextFormField(
                 controller: _description,
@@ -476,6 +584,57 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _addCarpetPiece,
+              icon: const Icon(Icons.add_box_outlined, size: 18),
+              label: const Text('Add Piece'),
+            ),
+            const SizedBox(height: 4),
+            if (_carpetPieceDetails.isNotEmpty)
+              Column(
+                children: [
+                  const Divider(height: 16),
+                  ...List.generate(_carpetPieceDetails.length, (i) {
+                    final p = _carpetPieceDetails[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          if (p.imageBytes != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(6),
+                              child: Image.memory(p.imageBytes!, height: 36, width: 36, fit: BoxFit.cover),
+                            )
+                          else
+                            Container(
+                              height: 36,
+                              width: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(Icons.crop_landscape, size: 18, color: AppColors.primary),
+                            ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${p.width}m x ${p.height}m | ${p.area.toStringAsFixed(2)} sqft'
+                              '${p.color.isNotEmpty ? ' | ${p.color}' : ''}',
+                              style: const TextStyle(fontSize: 13),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close, size: 18),
+                            onPressed: () => setState(() => _carpetPieceDetails.removeAt(i)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+              ),
           ],
         );
 
@@ -599,91 +758,6 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 14),
         ),
       ],
-    );
-  }
-
-  Widget _buildImageSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Product Image', style: Theme.of(context).textTheme.titleSmall),
-        const SizedBox(height: 8),
-        if (_imageBytes != null)
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.memory(_imageBytes!, height: 150, width: 150, fit: BoxFit.cover),
-              ),
-              GestureDetector(
-                onTap: () => setState(() { _imageBytes = null; }),
-                child: Container(
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  padding: const EdgeInsets.all(4),
-                  child: const Icon(Icons.close, size: 18, color: Colors.white),
-                ),
-              ),
-            ],
-          )
-        else if (_existingImageUrl != null)
-          Stack(
-            alignment: Alignment.topRight,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(_existingImageUrl!, height: 150, width: 150, fit: BoxFit.cover),
-              ),
-              GestureDetector(
-                onTap: () => setState(() { _existingImageUrl = null; }),
-                child: Container(
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                  padding: const EdgeInsets.all(4),
-                  child: const Icon(Icons.close, size: 18, color: Colors.white),
-                ),
-              ),
-            ],
-          )
-        else
-          Row(
-            children: [
-              _imageSourceButton(
-                icon: Icons.photo_library_outlined,
-                label: 'Gallery',
-                onTap: () => _pickImage(ImageSource.gallery),
-              ),
-              const SizedBox(width: 12),
-              _imageSourceButton(
-                icon: Icons.camera_alt_outlined,
-                label: 'Camera',
-                onTap: () => _pickImage(ImageSource.camera),
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget _imageSourceButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        width: 150,
-        height: 100,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade400),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 32, color: Colors.grey.shade600),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(color: Colors.grey.shade600)),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -14,6 +14,38 @@ class QaleenSize {
   Map<String, dynamic> toJson() => {'height': height, 'width': width, 'pieces': pieces};
 }
 
+class CarpetPieceData {
+  final double width;
+  final double height;
+  final double area;
+  final String color;
+  final String image;
+
+  const CarpetPieceData({
+    required this.width,
+    required this.height,
+    this.area = 0,
+    this.color = '',
+    this.image = '',
+  });
+
+  factory CarpetPieceData.fromJson(Map<String, dynamic> json) => CarpetPieceData(
+        width: (json['width'] as num?)?.toDouble() ?? 0,
+        height: (json['height'] as num?)?.toDouble() ?? 0,
+        area: (json['area'] as num?)?.toDouble() ?? 0,
+        color: json['color']?.toString() ?? '',
+        image: json['image']?.toString() ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'width': width,
+        'height': height,
+        'area': area,
+        'color': color,
+        if (image.isNotEmpty) 'image': image,
+      };
+}
+
 class Product {
   final String id;
   final String name;
@@ -27,6 +59,7 @@ class Product {
   final double carpetWidth;
   final double carpetHeight;
   final int carpetPieces;
+  final List<CarpetPieceData> carpetPiecesData;
   final double costPerSqft;
   final double costPerPiece;
   final List<QaleenSize> qaleenSizes;
@@ -58,6 +91,7 @@ class Product {
     this.carpetWidth = 0,
     this.carpetHeight = 0,
     this.carpetPieces = 0,
+    this.carpetPiecesData = const [],
     this.costPerSqft = 0,
     this.costPerPiece = 0,
     this.qaleenSizes = const [],
@@ -114,6 +148,10 @@ class Product {
       carpetWidth: (json['carpetWidth'] as num?)?.toDouble() ?? 0,
       carpetHeight: (json['carpetHeight'] as num?)?.toDouble() ?? 0,
       carpetPieces: (json['carpetPieces'] as num?)?.toInt() ?? 0,
+      carpetPiecesData: (json['carpetPiecesData'] as List?)
+              ?.map((e) => CarpetPieceData.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       costPerSqft: (json['costPerSqft'] as num?)?.toDouble() ?? 0,
       costPerPiece: (json['costPerPiece'] as num?)?.toDouble() ?? 0,
       qaleenSizes: (json['qaleenSizes'] as List?)
@@ -148,6 +186,7 @@ class Product {
         'carpetWidth': carpetWidth,
         'carpetHeight': carpetHeight,
         'carpetPieces': carpetPieces,
+        'carpetPiecesData': carpetPiecesData.map((p) => p.toJson()).toList(),
         'costPerSqft': costPerSqft,
         'costPerPiece': costPerPiece,
         'qaleenSizes': qaleenSizes.map((s) => s.toJson()).toList(),
