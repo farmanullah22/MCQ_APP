@@ -325,10 +325,13 @@ class _ProductCard extends StatelessWidget {
   String _typeDetail(Product p) {
     switch (p.productType) {
       case 'carpet':
-        if (p.carpetWidth > 0 && p.carpetHeight > 0) {
-          return '${p.carpetWidth}m x ${p.carpetHeight}m | ${p.carpetPieces} rolls';
+        if (p.carpetPiecesData.isNotEmpty) {
+          return '${p.carpetPiecesData.length} pieces | ${p.quantity} sqft';
         }
-        return '${p.carpetPieces} rolls';
+        if (p.carpetWidth > 0 && p.carpetHeight > 0) {
+          return '${p.carpetWidth}m x ${p.carpetHeight}m | ${p.quantity} sqft';
+        }
+        return '${p.quantity} sqft';
       case 'meter':
         return '${p.meterLength}m | ${Formatters.currency(p.costPerMeter)}/m';
       case 'qaleen':
@@ -345,7 +348,7 @@ class _ProductCard extends StatelessWidget {
   String _stockLabel(Product p) {
     switch (p.productType) {
       case 'carpet':
-        return '${p.carpetPieces} rolls';
+        return '${p.quantity} sqft';
       case 'meter':
         return '${p.meterLength}m';
       case 'qaleen':

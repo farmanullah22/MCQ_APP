@@ -304,7 +304,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   String _stockLabel(Product p) {
     switch (p.productType) {
       case 'carpet':
-        return '${p.carpetPieces} rolls';
+        return '${p.quantity} sqft';
       case 'meter':
         return '${p.meterLength}m';
       default:

@@ -151,10 +151,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   int get _computedQuantity {
     switch (_productType) {
       case 'carpet':
+        if (_carpetPieceDetails.isNotEmpty) {
+          return _carpetPieceDetails.fold<int>(0, (sum, p) => sum + (p.width * p.height).round());
+        }
         final w = double.tryParse(_carpetWidth.text) ?? 0;
         final h = double.tryParse(_carpetHeight.text) ?? 0;
-        final pieces = int.tryParse(_carpetPieces.text) ?? 0;
-        return (w * h * pieces).round();
+        return (w * h).round();
       case 'qaleen':
         if (_qaleenSizes.isNotEmpty) {
           return _qaleenSizes.fold(0, (sum, s) => sum + s.pieces);
@@ -170,11 +172,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   double get _computedCostPrice {
     switch (_productType) {
       case 'carpet':
-        final w = double.tryParse(_carpetWidth.text) ?? 0;
-        final h = double.tryParse(_carpetHeight.text) ?? 0;
-        final pieces = int.tryParse(_carpetPieces.text) ?? 0;
         final cps = double.tryParse(_costPerSqft.text) ?? 0;
-        return w * h * pieces * cps;
+        return _computedQuantity * cps;
       case 'qaleen':
         final cpp = double.tryParse(_costPerPiece.text) ?? 0;
         return cpp;
@@ -724,10 +723,14 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     String costLabel;
     switch (_productType) {
       case 'carpet':
-        final w = double.tryParse(_carpetWidth.text) ?? 0;
-        final h = double.tryParse(_carpetHeight.text) ?? 0;
-        final pcs = int.tryParse(_carpetPieces.text) ?? 0;
-        costLabel = '$qty sqft total (${w}m x ${h}m x $pcs) x ${Formatters.currency(double.tryParse(_costPerSqft.text) ?? 0)}/sqft';
+        if (_carpetPieceDetails.isNotEmpty) {
+          final labels = _carpetPieceDetails.map((p) => '${p.width.toInt()}x${p.height.toInt()}').join(' + ');
+          costLabel = '$qty sqft total ($labels) x ${Formatters.currency(double.tryParse(_costPerSqft.text) ?? 0)}/sqft';
+        } else {
+          final w = double.tryParse(_carpetWidth.text) ?? 0;
+          final h = double.tryParse(_carpetHeight.text) ?? 0;
+          costLabel = '$qty sqft total (${w}m x ${h}m) x ${Formatters.currency(double.tryParse(_costPerSqft.text) ?? 0)}/sqft';
+        }
         break;
       case 'qaleen':
         costLabel = '$qty pieces x ${Formatters.currency(double.tryParse(_costPerPiece.text) ?? 0)}/piece';

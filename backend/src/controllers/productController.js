@@ -62,11 +62,20 @@ const getProduct = asyncHandler(async (req, res) => {
 const calcQuantityAndCost = (body) => {
   const pt = body.productType || 'qaleen';
   if (pt === 'carpet') {
-    const w = Number(body.carpetWidth) || 0;
-    const h = Number(body.carpetHeight) || 0;
-    const pieces = Number(body.carpetPieces) || 0;
     const costPerSqft = Number(body.costPerSqft) || 0;
-    const qty = w * h * pieces;
+    const pieces = Array.isArray(body.carpetPiecesData) ? body.carpetPiecesData : [];
+    let qty = 0;
+    if (pieces.length > 0) {
+      pieces.forEach((p) => {
+        const pw = Number(p.width) || 0;
+        const ph = Number(p.height) || 0;
+        qty += pw * ph;
+      });
+    } else {
+      const w = Number(body.carpetWidth) || 0;
+      const h = Number(body.carpetHeight) || 0;
+      qty = w * h;
+    }
     return { quantity: qty, costPrice: qty * costPerSqft };
   }
   if (pt === 'qaleen') {
