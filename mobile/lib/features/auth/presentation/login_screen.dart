@@ -97,7 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   void _schedulePreview() {
     _previewTimer?.cancel();
-    if (Validators.email(_emailController.text.trim()) != null) {
+    if (Validators.emailOrPhone(_emailController.text.trim()) != null) {
       if (_preview != null || _previewLoading) {
         setState(() {
           _preview = null;
@@ -369,15 +369,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     children: [
                       TextFormField(
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
+                        keyboardType: TextInputType.text,
                         textInputAction: TextInputAction.next,
                         style: const TextStyle(color: Colors.white),
                         cursorColor: _gold,
-                        validator: Validators.email,
+                        validator: Validators.emailOrPhone,
                         decoration: _luxeDecoration(
                           'Email / Phone Number',
-                          Icons.mail_outline,
+                          Icons.alternate_email,
                         ),
                       ),
                       const SizedBox(height: 14),

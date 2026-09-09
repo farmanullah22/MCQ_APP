@@ -7,13 +7,13 @@ class AuthRepository {
   final ApiClient _api;
 
   Future<({String token, User user})> login(
-    String email,
+    String identifier,
     String password, {
     String? shopId,
     String? fcmToken,
   }) async {
     final res = await _api.request('POST', '/auth/login', data: {
-      'email': email.trim(),
+      'identifier': identifier.trim(),
       'password': password,
       'shopId': ?shopId,
       'fcmToken': ?fcmToken,
@@ -25,8 +25,8 @@ class AuthRepository {
     );
   }
 
-  Future<LoginPreview> previewLogin(String email) async {
-    final res = await _api.request('GET', '/auth/preview', query: {'email': email.trim()});
+  Future<LoginPreview> previewLogin(String identifier) async {
+    final res = await _api.request('GET', '/auth/preview', query: {'identifier': identifier.trim()});
     return LoginPreview.fromJson(res['data'] as Map<String, dynamic>);
   }
 

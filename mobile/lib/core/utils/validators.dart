@@ -1,6 +1,8 @@
 class Validators {
   Validators._();
 
+  static final _emailRegex = RegExp(r'^[\w\.\-+]+@[\w\-]+(\.[\w\-]+)+$');
+
   static String? required(String? value, [String message = 'This field is required']) {
     if (value == null || value.trim().isEmpty) return message;
     return null;
@@ -8,8 +10,17 @@ class Validators {
 
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) return 'Email is required';
-    final regex = RegExp(r'^[\w\.\-+]+@[\w\-]+(\.[\w\-]+)+$');
-    if (!regex.hasMatch(value.trim())) return 'Enter a valid email';
+    if (!_emailRegex.hasMatch(value.trim())) return 'Enter a valid email';
+    return null;
+  }
+
+  /// Accepts either an email address or a phone number.
+  static String? emailOrPhone(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Email or phone is required';
+    final id = value.trim();
+    final isEmail = _emailRegex.hasMatch(id);
+    final isPhone = RegExp(r'^\+?[0-9][0-9\s\-()]{6,20}$').hasMatch(id);
+    if (!isEmail && !isPhone) return 'Enter a valid email or phone number';
     return null;
   }
 

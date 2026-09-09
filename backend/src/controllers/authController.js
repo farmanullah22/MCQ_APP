@@ -5,21 +5,33 @@ const ApiResponse = require('../utils/ApiResponse');
 const { signToken, parseDeviceInfo } = require('../utils/jwt');
 const { recordAudit } = require('../middleware/auth');
 
-const login = asyncHandler(async (req, res) => {
-  const { email, phone, password, shopId } = req.body;
-  if (!password) throw new ApiError(400, 'Password is required.');
-  if (!email && !phone) throw new ApiError(400, 'Email or phone number is required.');
+const looksLikeEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
-  let user;
-  if (email) {
-    user = await User.findOne({ email: email.toLowerCase() })
-      .select('+password')
-      .populate('assignedShop');
-  } else {
-    user = await User.findOne({ phone })
+// Normalise a phone number: strip spaces, dashes, parens; keep leading '+'.
+const normalizePhone = (value) => String(value).trim().replace(/[\s\-()]/g, '');
+
+const findLoginUser = (identifier) => {
+  const id = identifier.trim();
+  if (looksLikeEmail(id)) {
+    return User.findOne({ email: id.toLowerCase() })
       .select('+password')
       .populate('assignedShop');
   }
+  const normalized = normalizePhone(id);
+  return User.findOne({
+    $or: [{ phone: normalized }, { phone: id }],
+  })
+    .select('+password')
+    .populate('assignedShop');
+};
+
+const login = asyncHandler(async (req, res) => {
+  const { identifier, email, phone, password, shopId } = req.body;
+  const id = identifier || email || phone;
+  if (!password) throw new ApiError(400, 'Password is required.');
+  if (!id) throw new ApiError(400, 'Email or phone number is required.');
+
+  const user = await findLoginUser(id);
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, 'Invalid credentials.');
   }
@@ -56,10 +68,10 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const previewLogin = asyncHandler(async (req, res) => {
-  const email = (req.query.email || '').trim().toLowerCase();
-  if (!email) throw new ApiError(400, 'Email is required.');
+  const id = (req.query.identifier || req.query.email || '').trim();
+  if (!id) throw new ApiError(400, 'Email or phone number is required.');
 
-  const user = await User.findOne({ email }).populate('assignedShop', 'name address');
+  const user = await findLoginUser(id);
   if (!user) {
     res.json(ApiResponse.ok('Login preview fetched', { exists: false }));
     return;
@@ -175,12 +187,14 @@ const registerManager = asyncHandler(async (req, res) => {
   if (!email && !phone) throw new ApiError(400, 'Email or phone number is required.');
   if (!password) throw new ApiError(400, 'Password is required.');
 
+  const normalizedPhone = phone ? normalizePhone(phone) : '';
+
   if (email) {
     const exists = await User.findOne({ email: email.toLowerCase() });
     if (exists) throw new ApiError(409, 'A user with this email already exists.');
   }
-  if (phone) {
-    const exists = await User.findOne({ phone });
+  if (normalizedPhone) {
+    const exists = await User.findOne({ phone: normalizedPhone });
     if (exists) throw new ApiError(409, 'A user with this phone number already exists.');
   }
 
@@ -188,7 +202,7 @@ const registerManager = asyncHandler(async (req, res) => {
     name,
     email,
     password,
-    phone: phone || '',
+    phone: normalizedPhone,
     role: 'manager',
     assignedShop: assignedShop || null,
   });
@@ -221,7 +235,7 @@ const updateManager = asyncHandler(async (req, res) => {
 
   const { name, phone, email, assignedShop, isActive } = req.body;
   if (name !== undefined) manager.name = name;
-  if (phone !== undefined) manager.phone = phone;
+  if (phone !== undefined) manager.phone = normalizePhone(phone);
   if (assignedShop !== undefined) manager.assignedShop = assignedShop;
   if (isActive !== undefined) manager.isActive = isActive;
   if (email !== undefined) {

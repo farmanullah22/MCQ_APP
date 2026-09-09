@@ -38,12 +38,12 @@ class AuthController extends Notifier<AuthState> {
     state = const AuthState(status: AuthStatus.unauthenticated);
   }
 
-  Future<bool> login(String email, String password, {String? shopId, String? fcmToken}) async {
-    debugPrint('[AUTH] login() called for $email');
+  Future<bool> login(String identifier, String password, {String? shopId, String? fcmToken}) async {
+    debugPrint('[AUTH] login() called for $identifier');
     state = const AuthState(status: AuthStatus.authenticating);
     try {
       final repo = ref.read(authRepositoryProvider);
-      final result = await repo.login(email, password, shopId: shopId, fcmToken: fcmToken);
+      final result = await repo.login(identifier, password, shopId: shopId, fcmToken: fcmToken);
       await LocalStore.saveSession(result.token, result.user);
       debugPrint('[AUTH] login() succeeded');
       state = AuthState(status: AuthStatus.authenticated, user: result.user);

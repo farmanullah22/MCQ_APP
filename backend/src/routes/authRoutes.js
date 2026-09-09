@@ -1,9 +1,19 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const authController = require('../controllers/authController');
 const { protect, restrictTo } = require('../middleware/auth');
 const router = express.Router();
 
-router.post('/login', authController.login);
+// Tight brute-force guard on credential checks: 10 tries per 15 min per IP.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login attempts. Please try again after 15 minutes.' },
+});
+
+router.post('/login', authLimiter, authController.login);
 router.get('/preview', authController.previewLogin);
 
 router.post('/logout', protect, authController.logout);
