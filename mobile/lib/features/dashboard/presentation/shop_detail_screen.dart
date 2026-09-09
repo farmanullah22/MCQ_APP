@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +10,9 @@ import '../../../core/widgets/activity_timeline.dart';
 import '../../../core/widgets/charts.dart';
 import '../../../core/widgets/lux_widgets.dart';
 import '../../customers/presentation/customer_detail_screen.dart';
+import '../../inventory/presentation/inventory_screen.dart';
+import '../../sales/presentation/sales_list_screen.dart';
+import '../../suppliers/presentation/suppliers_screen.dart';
 import '../models/dashboard_data.dart';
 import '../providers/dashboard_providers.dart';
 import 'branch_customers_screen.dart';
@@ -103,6 +108,13 @@ class ShopDetailScreen extends ConsumerWidget {
                         data: data,
                         overviewAsync: overviewAsync,
                       ),
+                      const SizedBox(height: 26),
+                      const LuxSectionTitle(
+                        title: 'Branch Features',
+                        subtitle: 'Open a module for this branch',
+                      ),
+                      const SizedBox(height: 12),
+                      _BranchFeatureSlider(shopId: shopId, title: name),
                       if (overviewAsync.value?.managers.isNotEmpty ??
                           false) ...[
                         const SizedBox(height: 26),
@@ -285,6 +297,186 @@ String _unitOf(String productType) {
   if (productType == 'carpet') return 'sqft';
   if (productType == 'meter') return 'm';
   return 'pcs';
+}
+
+class _BranchFeatureSlider extends StatelessWidget {
+  const _BranchFeatureSlider({required this.shopId, required this.title});
+
+  final String shopId;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final features = <_BranchFeature>[
+      _BranchFeature(
+        label: 'Total Sales',
+        icon: Icons.point_of_sale_outlined,
+        gradient: const [Color(0xFF3B2A10), Color(0xFF6B4E1B)],
+        screen: SalesListScreen(),
+      ),
+      _BranchFeature(
+        label: 'Inventory',
+        icon: Icons.inventory_2_outlined,
+        gradient: const [Color(0xFF0F3D2E), Color(0xFF1F6E54)],
+        screen: InventoryScreen(),
+      ),
+      _BranchFeature(
+        label: 'Customers',
+        icon: Icons.people_outline,
+        gradient: const [Color(0xFF1B2A4A), Color(0xFF2F4F8F)],
+        screen: BranchCustomersScreen(shopId: shopId, title: title),
+      ),
+      _BranchFeature(
+        label: 'Suppliers',
+        icon: Icons.local_shipping_outlined,
+        gradient: const [Color(0xFF3A1B2A), Color(0xFF6E2F4F)],
+        screen: SuppliersScreen(),
+      ),
+      _BranchFeature(
+        label: 'Products',
+        icon: Icons.shopping_bag_outlined,
+        gradient: const [Color(0xFF26103A), Color(0xFF4F2F6E)],
+        screen: BranchProductsScreen(shopId: shopId, title: title),
+      ),
+    ];
+
+    return SizedBox(
+      height: 128,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        itemCount: features.length,
+        separatorBuilder: (_, index) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final feature = features[i];
+          return _BranchFeatureButton(
+            feature: feature,
+            onTap: () => _openFeature(context, feature.screen),
+          );
+        },
+      ),
+    );
+  }
+
+  static void _openFeature(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+}
+
+class _BranchFeature {
+  const _BranchFeature({
+    required this.label,
+    required this.icon,
+    required this.gradient,
+    required this.screen,
+  });
+
+  final String label;
+  final IconData icon;
+  final List<Color> gradient;
+  final Widget screen;
+}
+
+class _BranchFeatureButton extends StatelessWidget {
+  const _BranchFeatureButton({required this.feature, required this.onTap});
+
+  final _BranchFeature feature;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: feature.gradient,
+    );
+    return SizedBox(
+      width: 128,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: feature.gradient.last.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      width: 1,
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              feature.icon,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.lock,
+                            size: 13,
+                            color: Colors.white.withValues(alpha: 0.55),
+                          ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        feature.label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Open',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 String _typeLabel(String productType) {
@@ -1127,6 +1319,16 @@ class _ShopTopBar extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: Image.asset(
+            'lib/images/muallimlogo.png',
+            width: 38,
+            height: 38,
+            fit: BoxFit.contain,
+          ),
+        ),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

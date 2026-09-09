@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/app_bar_brand.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/status_views.dart';
 import '../../customers/models/customer.dart';
@@ -103,7 +104,15 @@ class _BranchCustomersScreenState extends ConsumerState<BranchCustomersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Customers · ${widget.title}')),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            const AppBarBrand(showText: false),
+            const SizedBox(width: 10),
+            Expanded(child: Text('Customers · ${widget.title}')),
+          ],
+        ),
+      ),
       body: Column(
         children: [
           Padding(
