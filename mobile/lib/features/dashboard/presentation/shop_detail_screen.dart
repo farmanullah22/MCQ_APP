@@ -385,11 +385,7 @@ class _BranchFeatureButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: feature.gradient,
-    );
+    final accent = feature.gradient.last;
     return SizedBox(
       width: 128,
       child: Container(
@@ -397,7 +393,7 @@ class _BranchFeatureButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: feature.gradient.last.withValues(alpha: 0.35),
+              color: accent.withValues(alpha: 0.22),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -406,17 +402,25 @@ class _BranchFeatureButton extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(22),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
                 onTap: onTap,
                 child: Container(
                   decoration: BoxDecoration(
-                    gradient: gradient,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.10),
+                        Colors.white.withValues(alpha: 0.04),
+                        accent.withValues(alpha: 0.14),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.18),
+                      color: Colors.white.withValues(alpha: 0.28),
                       width: 1,
                     ),
                   ),
@@ -430,8 +434,12 @@ class _BranchFeatureButton extends StatelessWidget {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.14),
+                              color: Colors.white.withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                width: 1,
+                              ),
                             ),
                             child: Icon(
                               feature.icon,
@@ -440,10 +448,17 @@ class _BranchFeatureButton extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          Icon(
-                            Icons.lock,
-                            size: 13,
-                            color: Colors.white.withValues(alpha: 0.55),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.lock,
+                              size: 11,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
                           ),
                         ],
                       ),
@@ -464,7 +479,7 @@ class _BranchFeatureButton extends StatelessWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: Colors.white.withValues(alpha: 0.65),
                         ),
                       ),
                     ],
