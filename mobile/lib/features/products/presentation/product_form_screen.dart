@@ -172,15 +172,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   double get _computedCostPrice {
     switch (_productType) {
       case 'carpet':
-        final cps = double.tryParse(_costPerSqft.text) ?? 0;
-        return _computedQuantity * cps;
+        return double.tryParse(_costPerSqft.text) ?? 0;
       case 'qaleen':
         final cpp = double.tryParse(_costPerPiece.text) ?? 0;
         return cpp;
       case 'meter':
-        final length = double.tryParse(_meterLength.text) ?? 0;
-        final cpm = double.tryParse(_costPerMeter.text) ?? 0;
-        return length * cpm;
+        return double.tryParse(_costPerMeter.text) ?? 0;
       default:
         return 0;
     }
@@ -713,12 +710,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   Widget _buildCostSummary() {
     final qty = _computedQuantity;
-    final cost = _computedCostPrice;
-    final totalCost = _productType == 'carpet'
-        ? cost
-        : _productType == 'meter'
-            ? cost
-            : cost * qty;
+    final cost = _computedCostPrice; // per-unit cost (per sqft / per meter / per piece)
+    final totalCost = qty * cost;
 
     String costLabel;
     switch (_productType) {

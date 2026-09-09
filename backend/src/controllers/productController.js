@@ -76,7 +76,9 @@ const calcQuantityAndCost = (body) => {
       const h = Number(body.carpetHeight) || 0;
       qty = w * h;
     }
-    return { quantity: qty, costPrice: qty * costPerSqft };
+    // costPrice is per-unit (per sqft so that qty * costPrice equals stock value
+    // and (unitPrice - costPrice) * qty yields correct sale profit).
+    return { quantity: qty, costPrice: costPerSqft };
   }
   if (pt === 'qaleen') {
     if (Array.isArray(body.qaleenSizes) && body.qaleenSizes.length > 0) {
@@ -88,7 +90,8 @@ const calcQuantityAndCost = (body) => {
   }
   if (pt === 'meter') {
     const length = Number(body.meterLength) || 0;
-    return { quantity: length, costPrice: length * (Number(body.costPerMeter) || 0) };
+    // costPrice is per meter (per-unit) so the same qty * costPrice / profit math holds.
+    return { quantity: length, costPrice: Number(body.costPerMeter) || 0 };
   }
   return { quantity: Number(body.quantity) || 0, costPrice: Number(body.costPrice) || 0 };
 };
