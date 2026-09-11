@@ -11,6 +11,9 @@ class InventoryLog {
   final String performedByName;
   final String shopName;
   final DateTime? date;
+  final List<Map<String, dynamic>> carpetPieces;
+  final List<Map<String, dynamic>> qaleenSizes;
+  final double length;
 
   const InventoryLog({
     required this.id,
@@ -25,9 +28,37 @@ class InventoryLog {
     this.performedByName = '',
     this.shopName = '',
     this.date,
+    this.carpetPieces = const [],
+    this.qaleenSizes = const [],
+    this.length = 0,
   });
 
   bool get isStockIn => actionType == 'stock_in';
+
+  String get movementDetail {
+    if (carpetPieces.isNotEmpty) {
+      final dims = carpetPieces
+          .map((p) => '${_fmt(p['width'])}x${_fmt(p['height'])}')
+          .join(', ');
+      return '$quantity sqft (${carpetPieces.length} piece${carpetPieces.length == 1 ? '' : 's'}: $dims)';
+    }
+    if (qaleenSizes.isNotEmpty) {
+      final dims = qaleenSizes
+          .map((s) => '${_fmt(s['width'])}x${_fmt(s['height'])} (${s['pieces']} pcs)')
+          .join(', ');
+      return '$quantity pcs ($dims)';
+    }
+    if (length > 0) {
+      return '$quantity m';
+    }
+    return '';
+  }
+
+  static String _fmt(dynamic v) {
+    final n = (v as num?)?.toDouble() ?? 0;
+    if (n == n.roundToDouble()) return n.toInt().toString();
+    return n.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+  }
 
   factory InventoryLog.fromJson(Map<String, dynamic> json) {
     final performedBy = json['performedBy'];
@@ -56,6 +87,13 @@ class InventoryLog {
       performedByName: pName,
       shopName: sName,
       date: DateTime.tryParse(json['date']?.toString() ?? ''),
+      carpetPieces: ((json['carpetPieces'] as List?) ?? const [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      qaleenSizes: ((json['qaleenSizes'] as List?) ?? const [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      length: (json['length'] as num?)?.toDouble() ?? 0,
     );
   }
 }

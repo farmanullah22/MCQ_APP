@@ -218,6 +218,15 @@ class _InventoryTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall,
                   ),
+                  if (log.movementDetail.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      log.movementDetail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+                    ),
+                  ],
                   const SizedBox(height: 4),
                   Text(
                     [

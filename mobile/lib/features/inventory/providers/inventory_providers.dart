@@ -58,6 +58,9 @@ class StockMutationController extends Notifier<StockMutationState> {
     required int quantity,
     String supplier = '',
     String notes = '',
+    List<Map<String, dynamic>> carpetPieces = const [],
+    List<Map<String, dynamic>> qaleenSizes = const [],
+    double? length,
   }) async {
     state = const StockMutationState(loading: true);
     try {
@@ -66,6 +69,9 @@ class StockMutationController extends Notifier<StockMutationState> {
             quantity: quantity,
             supplier: supplier,
             notes: notes,
+            carpetPieces: carpetPieces,
+            qaleenSizes: qaleenSizes,
+            length: length,
           );
       state = const StockMutationState();
       ref.invalidate(inventoryHistoryControllerProvider);
@@ -83,6 +89,9 @@ class StockMutationController extends Notifier<StockMutationState> {
     required int quantity,
     String reason = '',
     String notes = '',
+    List<Map<String, dynamic>> carpetPieces = const [],
+    List<Map<String, dynamic>> qaleenSizes = const [],
+    double? length,
   }) async {
     state = const StockMutationState(loading: true);
     try {
@@ -91,6 +100,9 @@ class StockMutationController extends Notifier<StockMutationState> {
             quantity: quantity,
             reason: reason,
             notes: notes,
+            carpetPieces: carpetPieces,
+            qaleenSizes: qaleenSizes,
+            length: length,
           );
       state = const StockMutationState();
       ref.invalidate(inventoryHistoryControllerProvider);
@@ -108,6 +120,9 @@ class StockMutationController extends Notifier<StockMutationState> {
     required String productId,
     required int quantity,
     String notes = '',
+    List<Map<String, dynamic>> carpetPieces = const [],
+    List<Map<String, dynamic>> qaleenSizes = const [],
+    double? length,
   }) async {
     state = const StockMutationState(loading: true);
     try {
@@ -117,6 +132,9 @@ class StockMutationController extends Notifier<StockMutationState> {
             productId: productId,
             quantity: quantity,
             notes: notes,
+            carpetPieces: carpetPieces,
+            qaleenSizes: qaleenSizes,
+            length: length,
           );
       state = const StockMutationState();
       ref.invalidate(inventoryHistoryControllerProvider);

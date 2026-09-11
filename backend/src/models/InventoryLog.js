@@ -1,5 +1,25 @@
 const mongoose = require('mongoose');
 
+const carpetPieceSchema = new mongoose.Schema(
+  {
+    width: { type: Number, default: 0 },
+    height: { type: Number, default: 0 },
+    area: { type: Number, default: 0 },
+    color: { type: String, default: '' },
+    image: { type: String, default: '' },
+  },
+  { _id: false }
+);
+
+const qaleenSizeSchema = new mongoose.Schema(
+  {
+    height: { type: Number, default: 0 },
+    width: { type: Number, default: 0 },
+    pieces: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
 const inventoryLogSchema = new mongoose.Schema(
   {
     shop: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop', required: true },
@@ -7,6 +27,9 @@ const inventoryLogSchema = new mongoose.Schema(
     productName: { type: String, default: '' },
     actionType: { type: String, enum: ['stock_in', 'stock_out'], required: true },
     quantity: { type: Number, required: true, min: 0 },
+    carpetPieces: { type: [carpetPieceSchema], default: [] },
+    qaleenSizes: { type: [qaleenSizeSchema], default: [] },
+    length: { type: Number, default: 0 },
     previousStock: { type: Number, required: true, default: 0 },
     newStock: { type: Number, required: true, default: 0 },
     supplier: { type: String, default: '' },

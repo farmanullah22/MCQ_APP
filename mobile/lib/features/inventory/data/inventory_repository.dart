@@ -11,6 +11,9 @@ class InventoryRepository {
     String supplier = '',
     DateTime? date,
     String notes = '',
+    List<Map<String, dynamic>> carpetPieces = const [],
+    List<Map<String, dynamic>> qaleenSizes = const [],
+    double? length,
   }) async {
     return _api.request('POST', '/inventory/in', data: {
       'productId': productId,
@@ -18,6 +21,9 @@ class InventoryRepository {
       'supplier': supplier,
       if (date != null) 'date': date.toIso8601String(),
       'notes': notes,
+      if (carpetPieces.isNotEmpty) 'carpetPieces': carpetPieces,
+      if (qaleenSizes.isNotEmpty) 'qaleenSizes': qaleenSizes,
+      if (length != null && length > 0) 'length': length,
     });
   }
 
@@ -27,6 +33,9 @@ class InventoryRepository {
     String reason = '',
     DateTime? date,
     String notes = '',
+    List<Map<String, dynamic>> carpetPieces = const [],
+    List<Map<String, dynamic>> qaleenSizes = const [],
+    double? length,
   }) async {
     return _api.request('POST', '/inventory/out', data: {
       'productId': productId,
@@ -34,6 +43,9 @@ class InventoryRepository {
       'reason': reason,
       if (date != null) 'date': date.toIso8601String(),
       'notes': notes,
+      if (carpetPieces.isNotEmpty) 'carpetPieces': carpetPieces,
+      if (qaleenSizes.isNotEmpty) 'qaleenSizes': qaleenSizes,
+      if (length != null && length > 0) 'length': length,
     });
   }
 
@@ -44,6 +56,9 @@ class InventoryRepository {
     required int quantity,
     DateTime? date,
     String notes = '',
+    List<Map<String, dynamic>> carpetPieces = const [],
+    List<Map<String, dynamic>> qaleenSizes = const [],
+    double? length,
   }) async {
     return _api.request('POST', '/inventory/transfer', data: {
       'fromShopId': fromShopId,
@@ -52,6 +67,9 @@ class InventoryRepository {
       'quantity': quantity,
       if (date != null) 'date': date.toIso8601String(),
       'notes': notes,
+      if (carpetPieces.isNotEmpty) 'carpetPieces': carpetPieces,
+      if (qaleenSizes.isNotEmpty) 'qaleenSizes': qaleenSizes,
+      if (length != null && length > 0) 'length': length,
     });
   }
 
