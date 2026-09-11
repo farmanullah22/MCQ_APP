@@ -141,6 +141,24 @@ _TransferProduct _parseTransferProduct(Map<String, dynamic> p) {
   );
 }
 
+// Conversion from the full product list (same data that powers Stock Out), so
+// the transfer flow can show the same per-piece / per-size selectors.
+_TransferProduct _transferFromProduct(Product p) {
+  var pieces = p.carpetPiecesData;
+  if (pieces.isEmpty && p.carpetWidth > 0 && p.carpetHeight > 0) {
+    pieces = [CarpetPieceData(width: p.carpetWidth, height: p.carpetHeight, area: p.carpetWidth * p.carpetHeight)];
+  }
+  return _TransferProduct(
+    id: p.id,
+    name: p.name,
+    quantity: p.quantity,
+    productType: p.productType,
+    pieces: pieces,
+    sizes: p.qaleenSizes,
+    meterLength: p.meterLength,
+  );
+}
+
 Future<_CarpetPieceDraft?> _showAddPieceSheet(BuildContext context, int index) async {
   final imagePicker = ImagePicker();
   final wCtrl = TextEditingController();
@@ -1466,7 +1484,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
   _TransferProduct? _selectedProduct;
   _MovementPayload _payload = const _MovementPayload();
   List<Map<String, dynamic>> _shops = const [];
-  List<Map<String, dynamic>> _products = const [];
+  List<_TransferProduct> _products = const [];
   bool _shopsLoading = true;
   bool _productsLoading = false;
   String? _shopsError;
@@ -1530,12 +1548,27 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
       _selectedProduct = null;
     });
     try {
-      final products = await ref.read(inventoryRepositoryProvider).shopProducts(shopId);
+      final user = ref.read(currentUserProvider);
+      // Managers can only fetch their own shop through /products, so when the
+      // source is a different branch (pull stock into my shop) fall back to the
+      // shop-products endpoint that scopes by the requested shop. Everyone else
+      // (admin on any shop, manager on their own shop) gets the full product
+      // list so the dimension selectors work exactly like Stock In / Stock Out.
+      final fromOtherMine = !(user?.isAdmin ?? false) && shopId != user?.assignedShopId;
+      final List<_TransferProduct> parsed;
+      if (fromOtherMine) {
+        final raw = await ref.read(inventoryRepositoryProvider).shopProducts(shopId);
+        parsed = raw
+            .where((p) => ((p['quantity'] as num?)?.toInt() ?? 0) > 0)
+            .map(_parseTransferProduct)
+            .toList();
+      } else {
+        final page = await ref.read(productRepositoryProvider).getProducts(shopId: shopId, limit: 500);
+        parsed = page.products.where((p) => p.quantity > 0).map(_transferFromProduct).toList();
+      }
       if (!mounted) return;
       setState(() {
-        _products = products
-            .where((p) => ((p['quantity'] as num?)?.toInt() ?? 0) > 0)
-            .toList();
+        _products = parsed;
         _productsLoading = false;
       });
     } catch (e) {
@@ -1587,13 +1620,16 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                         ),
                       )
                       .toList(),
-                  onChanged: (v) => setState(() {
-                    _fromShopId = v;
-                    _toShopId = null;
-                    _productId = null;
-                    _selectedProduct = null;
-                    _payload = const _MovementPayload();
-                  }),
+                  onChanged: (v) async {
+                    setState(() {
+                      _fromShopId = v;
+                      _toShopId = null;
+                      _productId = null;
+                      _selectedProduct = null;
+                      _payload = const _MovementPayload();
+                    });
+                    await _loadProducts();
+                  },
                   validator: (v) => v == null ? 'Select a source shop' : null,
                 ),
                 const SizedBox(height: 14),
@@ -1639,9 +1675,9 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                     items: _products
                         .map(
                           (p) => DropdownMenuItem(
-                            value: (p['_id'] ?? p['id']).toString(),
+                            value: p.id,
                             child: Text(
-                              '${p['name']} (${_fmtNum(((p['quantity'] as num?)?.toDouble() ?? 0))} ${_unitFor(p['productType']?.toString() ?? 'qaleen')})',
+                              '${p.name} (${_fmtNum(p.quantity.toDouble())} ${_unitFor(p.productType)})',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1650,10 +1686,7 @@ class _StockTransferScreenState extends ConsumerState<StockTransferScreen> {
                         .toList(),
                     onChanged: (v) => setState(() {
                       _productId = v;
-                      final matches = _products
-                          .where((p) => (p['_id'] ?? p['id']).toString() == v)
-                          .map(_parseTransferProduct)
-                          .toList();
+                      final matches = _products.where((p) => p.id == v).toList();
                       _selectedProduct = matches.isNotEmpty ? matches.first : null;
                       _payload = const _MovementPayload();
                     }),
