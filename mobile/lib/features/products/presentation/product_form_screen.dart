@@ -14,6 +14,7 @@ import '../../products/models/product.dart';
 import '../../suppliers/models/supplier.dart';
 import '../providers/product_providers.dart';
 import '../../../core/providers/repository_providers.dart';
+import 'barcode_scanner_screen.dart';
 
 class _CarpetPiece {
   final double width;
@@ -365,6 +366,15 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     );
   }
 
+  Future<void> _scanBarcode() async {
+    final value = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (value != null && value.isNotEmpty && mounted) {
+      setState(() => _barcode.text = value);
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final notifier = ref.read(productMutationControllerProvider.notifier);
@@ -459,7 +469,15 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
               TextFormField(
                 controller: _barcode,
-                decoration: const InputDecoration(labelText: 'Barcode', prefixIcon: Icon(Icons.qr_code_2)),
+                decoration: InputDecoration(
+                  labelText: 'Barcode',
+                  prefixIcon: const Icon(Icons.qr_code_2),
+                  suffixIcon: IconButton(
+                    tooltip: 'Scan barcode',
+                    icon: const Icon(Icons.qr_code_scanner),
+                    onPressed: _scanBarcode,
+                  ),
+                ),
               ),
               const SizedBox(height: 14),
               DropdownButtonFormField<String?>(
