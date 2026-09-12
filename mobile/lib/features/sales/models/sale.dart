@@ -27,6 +27,27 @@ class SaleItem {
   }
 }
 
+class WhatsAppReceipt {
+  final bool attempted;
+  final bool sent;
+  final String reason;
+  final String? error;
+
+  const WhatsAppReceipt({
+    required this.attempted,
+    required this.sent,
+    this.reason = '',
+    this.error,
+  });
+
+  factory WhatsAppReceipt.fromJson(Map<String, dynamic> json) => WhatsAppReceipt(
+        attempted: json['attempted'] == true,
+        sent: json['sent'] == true,
+        reason: json['reason']?.toString() ?? '',
+        error: json['error']?.toString(),
+      );
+}
+
 class Sale {
   final String id;
   final String invoiceNo;
@@ -46,6 +67,7 @@ class Sale {
   final String createdById;
   final String createdByName;
   final DateTime? createdAt;
+  final WhatsAppReceipt? whatsappReceipt;
 
   const Sale({
     required this.id,
@@ -66,6 +88,7 @@ class Sale {
     this.createdById = '',
     this.createdByName = '',
     this.createdAt,
+    this.whatsappReceipt,
   });
 
   int get totalItems => items.fold(0, (a, i) => a + i.quantity);
@@ -110,6 +133,9 @@ class Sale {
       createdById: cbId,
       createdByName: cbName,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? ''),
+      whatsappReceipt: json['whatsappReceipt'] is Map<String, dynamic>
+          ? WhatsAppReceipt.fromJson(json['whatsappReceipt'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

@@ -22,5 +22,16 @@ module.exports = {
     to: process.env.REPORT_RECIPIENT_EMAIL || process.env.SMTP_USER || '',
     enabled: (process.env.SMTP_USER && process.env.SMTP_PASS) ? true : false,
   },
+  whatsapp: {
+    // Meta WhatsApp Business Cloud API credentials.
+    token: process.env.WHATSAPP_API_TOKEN || '',
+    phoneId: process.env.WHATSAPP_PHONE_ID || '',
+    // Destination country code used to normalise local numbers (e.g. 0300... -> 92300...).
+    countryCode: process.env.WHATSAPP_COUNTRY_CODE || '92',
+    // When true (default), a PDF receipt is sent to the customer's WhatsApp
+    // after every sale that includes a phone number.
+    receiptsEnabled: process.env.WHATSAPP_RECEIPTS_ENABLED !== 'false',
+    enabled: !!(process.env.WHATSAPP_API_TOKEN && process.env.WHATSAPP_PHONE_ID),
+  },
   dailyReportCron: process.env.DAILY_REPORT_CRON || '0 21 * * *',
 };

@@ -90,7 +90,6 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
-  final _discountController = TextEditingController();
   final _notesController = TextEditingController();
   final _paidController = TextEditingController();
   final _cart = <_CartItem>[];
@@ -134,7 +133,6 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   void dispose() {
     _customerNameController.dispose();
     _customerPhoneController.dispose();
-    _discountController.dispose();
     _notesController.dispose();
     _paidController.dispose();
     super.dispose();
@@ -149,8 +147,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
     final canSelectShop = (ref.watch(currentUserProvider)?.isAdmin ?? false) && dashboard.shops.length > 1;
 
     final subtotal = _cart.fold<double>(0, (a, c) => a + c.lineTotal);
-    final discount = double.tryParse(_discountController.text.trim()) ?? 0;
-    final total = (subtotal - discount).clamp(0, double.infinity);
+    final total = subtotal.clamp(0, double.infinity);
     final selectedCustomer = _selectedCustomerId == null ? null : _customers.where((c) => c.id == _selectedCustomerId).firstOrNull;
     final customerDue = selectedCustomer?.balance ?? 0;
     final paid = double.tryParse(_paidController.text.trim()) ?? 0;
@@ -338,29 +335,6 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                   ),
                 ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _discountController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Discount (Rs.)'),
-                      onChanged: (v) {
-                        setState(() {});
-                        _syncPaidToTotal();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _notesController,
-                      decoration: const InputDecoration(labelText: 'Notes'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
               if (customerDue > 0)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -422,7 +396,6 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
                 child: Column(
                   children: [
                     _SummaryRow(label: 'Subtotal', value: Formatters.currency(subtotal)),
-                    _SummaryRow(label: 'Discount', value: '- ${Formatters.currency(discount)}'),
                     const Divider(),
                     _SummaryRow(
                       label: 'Total',
@@ -471,8 +444,7 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
   void _syncPaidToTotal() {
     if (!_paidAuto) return;
     final subtotal = _cart.fold<double>(0, (a, c) => a + c.lineTotal);
-    final discount = double.tryParse(_discountController.text.trim()) ?? 0;
-    final total = (subtotal - discount).clamp(0, double.infinity);
+    final total = subtotal.clamp(0, double.infinity);
     final current = double.tryParse(_paidController.text.trim()) ?? 0;
     if ((current - total).abs() > 0.005) {
       _paidController.text = total == 0 ? '' : total.toStringAsFixed(2);
@@ -499,7 +471,6 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
               ? 'Walk-in Customer'
               : _customerNameController.text.trim(),
           customerPhone: _customerPhoneController.text.trim(),
-          discount: double.tryParse(_discountController.text.trim()) ?? 0,
           paymentMethod: _paymentMethod ?? 'cash',
           notes: _notesController.text.trim(),
           paidAmount: double.tryParse(_paidController.text.trim()) ?? 0,
@@ -507,8 +478,14 @@ class _SaleFormScreenState extends ConsumerState<SaleFormScreen> {
         );
     if (!mounted) return;
     if (sale != null) {
+      final receipt = sale.whatsappReceipt;
+      final receiptMsg = (receipt != null && receipt.sent)
+          ? ' - Receipt sent on WhatsApp'
+          : (receipt != null && receipt.attempted && receipt.reason == 'error')
+              ? ' - Receipt not sent'
+              : '';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sale ${sale.invoiceNo} completed')),
+        SnackBar(content: Text('Sale ${sale.invoiceNo} completed$receiptMsg')),
       );
       Navigator.of(context).pop();
     } else {

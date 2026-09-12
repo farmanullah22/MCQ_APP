@@ -149,6 +149,11 @@ const createSale = asyncHandler(async (req, res) => {
     }))
   );
 
+  // Send the PDF receipt to the customer's WhatsApp number (if one is given
+  // and WhatsApp is configured). Failures never affect the sale itself.
+  const whatsappService = require('../services/whatsappService');
+  sale.whatsappReceipt = await whatsappService.sendWhatsAppReceipt(sale, sale.customerPhone);
+
   // Link the sale to a registered customer (matched by phone) and update
   // their purchase history. Credit sales also increase the outstanding due.
   const phone = (sale.customerPhone || '').trim();
