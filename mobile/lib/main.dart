@@ -32,10 +32,16 @@ Future<void> main() async {
   );
 
   // Register push token with the backend once session exists.
+  Future<void> registerToken(String token) async {
+    try {
+      await container.read(notificationRepositoryProvider).registerToken(token);
+    } catch (_) {}
+  }
+
+  FcmService.instance.onTokenRefresh = registerToken;
+
   final fcmToken = await FcmService.instance.getToken();
   if (fcmToken != null) {
-    try {
-      await container.read(notificationRepositoryProvider).registerToken(fcmToken);
-    } catch (_) {}
+    await registerToken(fcmToken);
   }
 }

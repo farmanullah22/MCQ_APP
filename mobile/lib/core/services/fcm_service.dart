@@ -12,12 +12,16 @@ class FcmService {
   static final FcmService instance = FcmService._();
   bool _initialized = false;
   void Function(Map<String, dynamic>)? onMessage;
+  void Function(String token)? onTokenRefresh;
 
   Future<void> init() async {
     if (_initialized) return;
     try {
       await FirebaseMessaging.instance.requestPermission();
-      _initialized = true;
+
+      FirebaseMessaging.instance.onTokenRefresh.listen((token) {
+        onTokenRefresh?.call(token);
+      });
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         final data = {
@@ -27,6 +31,8 @@ class FcmService {
         };
         onMessage?.call(data);
       });
+
+      _initialized = true;
     } catch (_) {
       _initialized = false;
     }
