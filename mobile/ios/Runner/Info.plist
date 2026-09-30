@@ -51,5 +51,9 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Mcq uses the camera to scan product barcodes and to photograph product and stock images.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mcq needs access to your photo library so you can select existing product and stock images, and barcode images to scan.</string>
 </dict>
 </plist>
