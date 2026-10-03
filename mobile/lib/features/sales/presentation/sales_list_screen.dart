@@ -10,6 +10,8 @@ import '../../../core/widgets/status_views.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../models/sale.dart';
 import '../providers/sale_providers.dart';
+import 'sale_add_items_screen.dart';
+import 'sale_return_exchange_screen.dart';
 
 class SalesListScreen extends ConsumerWidget {
   const SalesListScreen({super.key});
@@ -211,18 +213,33 @@ class _DateFilterBar extends StatelessWidget {
   }
 }
 
-class SaleDetailScreen extends StatelessWidget {
+class SaleDetailScreen extends ConsumerWidget {
   const SaleDetailScreen({super.key, required this.sale});
 
   final Sale sale;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    // Managers operate returns/exchanges; admins are view-only and just read
+    // the history the managers left behind.
+    final canAdjust = !(ref.watch(currentUserProvider)?.isAdmin ?? false);
+
     return Scaffold(
-      appBar: AppBar(title: Text(sale.invoiceNo)),
+      appBar: AppBar(
+        title: Text(sale.invoiceNo),
+        actions: [
+          if (canAdjust)
+            IconButton(
+              tooltip: 'Add products to invoice',
+              onPressed: () => _addItems(context),
+              icon: const Icon(Icons.playlist_add),
+            ),
+        ],
+      ),
+      bottomNavigationBar: canAdjust ? _AdjustmentBar(sale: sale) : null,
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         children: [
           Card(
             child: Padding(
@@ -239,7 +256,7 @@ class SaleDetailScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        Formatters.currency(sale.totalAmount),
+                        Formatters.currency(sale.effectiveTotal),
                         style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.primary, fontSize: 18),
                       ),
                     ],
@@ -266,6 +283,16 @@ class SaleDetailScreen extends StatelessWidget {
                         _InfoChip(icon: Icons.phone_outlined, label: sale.customerPhone),
                       if (sale.profit > 0)
                         _InfoChip(icon: Icons.trending_up, label: 'Profit ${Formatters.currency(sale.profit)}', color: AppColors.success),
+                      if (sale.hasAdjustments)
+                        _InfoChip(
+                          icon: Icons.assignment_return_outlined,
+                          label: sale.returns.isNotEmpty && sale.exchanges.isNotEmpty
+                              ? 'Returned & exchanged'
+                              : sale.exchanges.isNotEmpty
+                                  ? 'Exchanged'
+                                  : 'Returned',
+                          color: AppColors.warning,
+                        ),
                     ],
                   ),
                 ],
@@ -276,41 +303,94 @@ class SaleDetailScreen extends StatelessWidget {
           Card(
             child: Column(
               children: [
-                ...sale.items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                Text(
-                                  '${item.quantity} x ${Formatters.currency(item.unitPrice)}',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
+                ...sale.items.map((item) {
+                  final returned = _returnedQty(sale, item.productId);
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.productName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                              Text(
+                                '${item.quantity} x ${Formatters.currency(item.unitPrice)}',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              Formatters.currency(item.totalAmount),
+                              style: const TextStyle(fontWeight: FontWeight.w700),
                             ),
-                          ),
-                          Text(
-                            Formatters.currency(item.totalAmount),
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
-                    )),
+                            if (returned > 0)
+                              Text(
+                                '$returned returned',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.danger,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }),
                 const Divider(height: 1),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
                       _DetailRow(label: 'Subtotal', value: Formatters.currency(sale.subtotal)),
-                      _DetailRow(label: 'Discount', value: '- ${Formatters.currency(sale.discount)}'),
+                      if (sale.discount > 0)
+                        _DetailRow(label: 'Discount', value: '- ${Formatters.currency(sale.discount)}'),
                       _DetailRow(
-                        label: 'Total',
+                        label: sale.hasAdjustments ? 'Original Total' : 'Total',
                         value: Formatters.currency(sale.totalAmount),
+                        bold: !sale.hasAdjustments,
+                        valueColor: sale.hasAdjustments ? null : AppColors.primary,
+                      ),
+                      if (sale.hasAdjustments) ...[
+                        if (sale.returnTotal > 0)
+                          _DetailRow(
+                            label: 'Returned',
+                            value: '- ${Formatters.currency(sale.returnTotal)}',
+                            valueColor: AppColors.danger,
+                          ),
+                        if (sale.exchangeTotal > 0)
+                          _DetailRow(
+                            label: 'Exchange Added',
+                            value: '+ ${Formatters.currency(sale.exchangeTotal)}',
+                            valueColor: AppColors.success,
+                          ),
+                        _DetailRow(
+                          label: 'Net Total',
+                          value: Formatters.currency(sale.netTotal),
+                          bold: true,
+                          valueColor: AppColors.primary,
+                        ),
+                      ],
+                      _DetailRow(label: 'Paid', value: Formatters.currency(sale.paidAmount)),
+                      if (sale.refundTotal > 0)
+                        _DetailRow(
+                          label: 'Refunded',
+                          value: '- ${Formatters.currency(sale.refundTotal)}',
+                          valueColor: AppColors.danger,
+                        ),
+                      _DetailRow(
+                        label: sale.dueAmount < 0 ? 'Refund Due to Customer' : 'Due',
+                        value: Formatters.currency(sale.dueAmount.abs()),
                         bold: true,
-                        valueColor: AppColors.primary,
+                        valueColor: sale.dueAmount < 0
+                            ? AppColors.danger
+                            : (sale.dueAmount > 0 ? AppColors.danger : AppColors.success),
                       ),
                     ],
                   ),
@@ -318,6 +398,64 @@ class SaleDetailScreen extends StatelessWidget {
               ],
             ),
           ),
+          if (sale.returns.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _AdjustmentList(
+              title: 'Returned Items',
+              icon: Icons.assignment_return_outlined,
+              color: AppColors.danger,
+              children: sale.returns
+                  .map((r) => _AdjustmentTile(
+                        name: r.productName,
+                        quantity: r.quantity,
+                        unitPrice: r.unitPrice,
+                        total: r.totalAmount,
+                        footnote: [
+                          if (r.reason.isNotEmpty) r.reason,
+                          if (r.isExchange) 'via exchange',
+                        ].join(' · '),
+                      ))
+                  .toList(),
+            ),
+          ],
+          if (sale.exchanges.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _AdjustmentList(
+              title: 'Replacement Items',
+              icon: Icons.swap_horiz_rounded,
+              color: AppColors.success,
+              children: sale.exchanges
+                  .map((e) => _AdjustmentTile(
+                        name: e.productName,
+                        quantity: e.quantity,
+                        unitPrice: e.unitPrice,
+                        total: e.totalAmount,
+                        footnote: e.note,
+                      ))
+                  .toList(),
+            ),
+          ],
+          if (sale.payments.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _AdjustmentList(
+              title: 'Payment History',
+              icon: Icons.history_rounded,
+              color: AppColors.info,
+              children: sale.payments
+                  .map((p) => _AdjustmentTile(
+                        name: _paymentLabel(p.type),
+                        quantity: 1,
+                        unitPrice: 0,
+                        total: p.amount,
+                        emphasiseTotal: p.isRefund,
+                        footnote: [
+                          AppConstants.paymentMethodLabels[p.method] ?? Formatters.title(p.method),
+                          if (p.note.isNotEmpty) p.note,
+                        ].join(' · '),
+                      ))
+                  .toList(),
+            ),
+          ],
           if (sale.notes.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -329,6 +467,288 @@ class SaleDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addItems(BuildContext context) async {
+    final updated = await Navigator.of(context).push<Sale>(
+      MaterialPageRoute(builder: (_) => SaleAddItemsScreen(sale: sale)),
+    );
+    if (updated == null || !context.mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => SaleDetailScreen(sale: updated)),
+    );
+  }
+
+  static int _returnedQty(Sale sale, String productId) => sale.returns
+      .where((r) => r.productId == productId)
+      .fold(0, (a, r) => a + r.quantity);
+
+  static String _paymentLabel(String type) => switch (type) {
+        'sale' => 'Payment at sale',
+        'payment' => 'Payment received',
+        'refund' => 'Refunded to customer',
+        'exchange_settlement' => 'Exchange settlement',
+        _ => Formatters.title(type),
+      };
+}
+
+/// Bottom action bar holding the manager-only invoice actions.
+class _AdjustmentBar extends ConsumerWidget {
+  const _AdjustmentBar({required this.sale});
+
+  final Sale sale;
+
+  Future<void> _open(BuildContext context, WidgetRef ref, AdjustmentMode mode) async {
+    final updated = await Navigator.of(context).push<Sale>(
+      MaterialPageRoute(
+        builder: (_) => SaleReturnExchangeScreen(sale: sale, mode: mode),
+      ),
+    );
+    if (updated == null || !context.mounted) return;
+    // Swap the stale copy for the freshly returned invoice.
+    final route = ModalRoute.of(context);
+    if (route != null && route.isCurrent) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => SaleDetailScreen(sale: updated)),
+      );
+    } else {
+      Navigator.of(context).pop(updated);
+    }
+  }
+
+  Future<void> _recordPayment(BuildContext context, WidgetRef ref) async {
+    final controller = TextEditingController();
+    String type = sale.dueAmount > 0 ? 'payment' : 'refund';
+    String method = sale.paymentMethod;
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setInner) => AlertDialog(
+          title: const Text('Payment / Refund'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'payment', label: Text('Collect')),
+                  ButtonSegment(value: 'refund', label: Text('Refund')),
+                ],
+                selected: {type},
+                onSelectionChanged: (s) => setInner(() => type = s.first),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  prefixText: 'Rs. ',
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                isExpanded: true,
+                initialValue: method,
+                decoration: const InputDecoration(labelText: 'Method'),
+                items: AppConstants.paymentMethods
+                    .map((m) => DropdownMenuItem(
+                          value: m,
+                          child: Text(
+                              AppConstants.paymentMethodLabels[m] ?? Formatters.title(m)),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setInner(() => method = v);
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+
+    if (submitted != true || !context.mounted) return;
+    final amount = double.tryParse(controller.text.trim()) ?? 0;
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter an amount greater than zero.')),
+      );
+      return;
+    }
+    controller.dispose();
+
+    final updated = await ref.read(saleMutationControllerProvider.notifier).recordPayment(
+          sale.id,
+          type: type,
+          amount: amount,
+          method: method,
+        );
+    if (!context.mounted) return;
+    if (updated == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ref.read(saleMutationControllerProvider).error ?? 'Could not save'),
+        backgroundColor: AppColors.danger,
+      ));
+      return;
+    }
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => SaleDetailScreen(sale: updated)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final canReturn = sale.items.any((i) => sale.returnableQuantity(i.productId) > 0);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: canReturn ? () => _open(context, ref, AdjustmentMode.returnOnly) : null,
+                icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                label: const Text('Return'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  side: const BorderSide(color: AppColors.danger),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: canReturn ? () => _open(context, ref, AdjustmentMode.exchange) : null,
+                icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                label: const Text('Exchange'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.success,
+                  side: const BorderSide(color: AppColors.success),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => _recordPayment(context, ref),
+                icon: const Icon(Icons.payments_outlined, size: 18),
+                label: const Text('Pay/Refund'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdjustmentList extends StatelessWidget {
+  const _AdjustmentList({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.children,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            child: Row(
+              children: [
+                Icon(icon, size: 17, color: color),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: color),
+                ),
+              ],
+            ),
+          ),
+          ...children,
+          const SizedBox(height: 6),
+        ],
+      ),
+    );
+  }
+}
+
+class _AdjustmentTile extends StatelessWidget {
+  const _AdjustmentTile({
+    required this.name,
+    required this.quantity,
+    required this.unitPrice,
+    required this.total,
+    this.footnote = '',
+    this.emphasiseTotal = false,
+  });
+
+  final String name;
+  final int quantity;
+  final double unitPrice;
+  final double total;
+  final String footnote;
+  final bool emphasiseTotal;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                if (footnote.isNotEmpty)
+                  Text(footnote, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${quantity > 1 ? '$quantity x ' : ''}${Formatters.currency(unitPrice)}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                Formatters.currency(total),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: emphasiseTotal ? AppColors.danger : AppColors.primary,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );

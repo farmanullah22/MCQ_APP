@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Muallim Carpets (MCQ)</title>
+<meta name="description" content="Privacy Policy for the Muallim Carpets (MCQ) app for iOS and Android.">
+<meta name="theme-color" content="#0f172a">
+<meta name="color-scheme" content="light dark">
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-soft: #f8fafc;
+    --bg-elev: #ffffff;
+    --text: #1f2937;
+    --text-soft: #4b5563;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --border-soft: #eef2f7;
+    --accent: #1d4ed8;
+    --accent-soft: #eff4ff;
+    --code-bg: #f1f5f9;
+    --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 8px 24px rgba(15, 23, 42, .05);
+    --radius: 12px;
+    --maxw: 860px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --bg-soft: #111c33;
+      --bg-elev: #16213b;
+      --text: #e8edf6;
+      --text-soft: #c3ccdb;
+      --muted: #97a3b8;
+      --border: #2a3550;
+      --border-soft: #22304d;
+      --accent: #8ab0ff;
+      --accent-soft: #17233d;
+      --code-bg: #1c2942;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+                 Arial, "Noto Sans", sans-serif;
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Header ---------- */
+  .site-header {
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 20px 34px;
+  }
+
+  .header-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+
+  .brand-mark {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    line-height: 30px;
+    text-align: center;
+    letter-spacing: 0;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 5vw, 2.4rem);
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -.02em;
+  }
+
+  .subtitle {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: .95rem;
+  }
+
+  .dates {
+    margin: 22px auto 0;
+    max-width: 460px;
+    text-align: left;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: .93rem;
+    color: var(--text-soft);
+    box-shadow: var(--shadow);
+  }
+
+  .dates div + div { margin-top: 4px; }
+
+  /* ---------- Layout ---------- */
+  main {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 34px 20px 12px;
+  }
+
+  section { margin: 0 0 40px; }
+
+  h2 {
+    font-size: clamp(1.24rem, 3.6vw, 1.45rem);
+    line-height: 1.35;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-size: 1.06rem;
+    font-weight: 700;
+    margin: 28px 0 10px;
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 22px 0 8px;
+  }
+
+  p { margin: 0 0 16px; }
+
+  a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    overflow-wrap: anywhere;
+  }
+
+  a:hover { text-decoration-thickness: 2px; }
+
+  strong { font-weight: 650; color: var(--text); }
+
+  ul, ol {
+    margin: 0 0 16px;
+    padding-left: 22px;
+  }
+
+  li { margin-bottom: 9px; }
+
+  li > ul, li > ol { margin-top: 9px; }
+
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: .88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 5px;
+    overflow-wrap: anywhere;
+  }
+
+  .note {
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 0 0 18px;
+    font-size: .95rem;
+  }
+
+  .note p:last-child { margin-bottom: 0; }
+
+  /* ---------- Tables ---------- */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 0 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-elev);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .95rem;
+  }
+
+  caption {
+    text-align: left;
+    padding: 14px 16px 0;
+    color: var(--muted);
+    font-size: .88rem;
+  }
+
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  thead th {
+    background: var(--bg-soft);
+    font-weight: 650;
+    font-size: .82rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td { border-bottom: 0; }
+
+  tbody th {
+    font-weight: 600;
+    color: var(--text);
+    background: var(--bg-soft);
+  }
+
+  .yes { color: #15803d; font-weight: 650; }
+  .no  { color: var(--muted); font-weight: 650; }
+
+  @media (prefers-color-scheme: dark) {
+    .yes { color: #6ee7a8; }
+  }
+
+  /* ---------- Appendix ---------- */
+  .appendix { margin-top: 8px; }
+
+  .appendix-label {
+    display: inline-block;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 14px;
+  }
+
+  /* ---------- Footer ---------- */
+  .site-footer {
+    margin-top: 12px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-soft);
+    padding: 30px 20px 40px;
+  }
+
+  .footer-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    text-align: center;
+    color: var(--muted);
+    font-size: .93rem;
+  }
+
+  .footer-inner p { margin: 0 0 6px; }
+
+  .footer-brand { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <p class="brand"><span class="brand-mark" aria-hidden="true">MCQ</span> Muallim Carpets</p>
+    <h1>Privacy Policy</h1>
+    <p class="subtitle">Muallim Carpets (MCQ) &mdash; iOS &amp; Android</p>
+    <div class="dates">
+      <div><strong>Last updated:</strong> 3 October 2026</div>
+      <div><strong>Effective date:</strong> 3 October 2026</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <section aria-labelledby="s1">
+    <h2 id="s1">1. Who we are</h2>
+    <p>Muallim Carpets (the &ldquo;MCQ&rdquo; app) is a business management application used to
+      manage carpet inventory, sales, expenses, customers, suppliers and staff for a carpet
+      retailer.</p>
+    <p>The operator of this application (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is
+      <strong>Muallim Carpets</strong>. If you have any questions about this policy or our handling
+      of your data, contact us at
+      <a href="mailto:fareedoonshinwari@gmail.com">fareedoonshinwari@gmail.com</a>.</p>
+  </section>
+
+  <section aria-labelledby="s2">
+    <h2 id="s2">2. Scope of this policy</h2>
+    <p>This policy explains what information the MCQ app collects, why it collects it, how it is
+      used and stored, who it is shared with, and what choices you have.</p>
+    <p>The app is used by authorised staff members (administrators and managers) of the retail
+      business. Because the app is a record-keeping tool for a business, staff users may enter
+      information about <strong>other people</strong> &mdash; such as the business&rsquo;s customers
+      and suppliers. This policy covers that information as well, and explains the
+      responsibilities of the staff member who enters it.</p>
+  </section>
+
+  <section aria-labelledby="s3">
+    <h2 id="s3">3. Information we collect</h2>
+
+    <h3>3.1 Account and login information (our staff users)</h3>
+    <p>To create and maintain user accounts, we collect:</p>
+    <ul>
+      <li><strong>Full name</strong></li>
+      <li><strong>Email address</strong></li>
+      <li><strong>Phone number</strong> (optional)</li>
+      <li><strong>Password</strong> &mdash; stored only as a one-way salted hash (bcrypt). We never
+        see or store your plaintext password.</li>
+      <li><strong>Role and assigned shop</strong> (administrator or manager) &mdash; assigned by an
+        administrator</li>
+    </ul>
+    <p>There is <strong>no public sign-up</strong> in the app. Accounts are created by an
+      administrator.</p>
+
+    <h3>3.2 Business records entered into the app</h3>
+    <p>Staff users enter business data in order to run the business. This may include personal
+      information about the business&rsquo;s customers and suppliers:</p>
+    <ul>
+      <li><strong>Customer records:</strong> name, phone number, email address, postal address,
+        city, notes, account balance and payment history</li>
+      <li><strong>Supplier records:</strong> name, phone number, email address, address, city,
+        notes, balance and payment history</li>
+      <li><strong>Sales and invoices:</strong> invoice number, customer name, customer phone
+        number, products sold, prices, discounts, totals, amounts paid, amounts due, profit, and a
+        manual payment-method label (for example cash, bank transfer, EasyPaisa, JazzCash, or
+        credit)</li>
+      <li><strong>Expenses:</strong> category, amount, description</li>
+      <li><strong>Inventory:</strong> product names, SKU, barcode, brand, stock quantities, and
+        product/stock photographs taken or selected with the camera or photo library</li>
+      <li><strong>Audit log:</strong> which user performed which action, when, and the changes
+        made</li>
+    </ul>
+
+    <h3>3.3 Device and technical information</h3>
+    <p>To keep the app secure and to investigate problems, our server records:</p>
+    <ul>
+      <li><strong>IP address</strong> of the request</li>
+      <li><strong>Device platform</strong> (Android or iOS)</li>
+      <li><strong>App version</strong></li>
+      <li><strong>Device user-agent</strong> string</li>
+      <li><strong>Timestamp</strong> of actions and logins</li>
+    </ul>
+
+    <h3>3.4 Push notification token</h3>
+    <p>If you enable notifications, the app registers a <strong>Firebase Cloud Messaging (FCM)
+      device token</strong> with our server so we can deliver alerts to your device. If you log
+      out, the stored token is removed from your account.</p>
+  </section>
+
+  <section aria-labelledby="s4">
+    <h2 id="s4">4. Information we do NOT collect</h2>
+    <p>The app does <strong>not</strong> collect or store:</p>
+    <ul>
+      <li>Precise or coarse geolocation</li>
+      <li>Health or fitness information</li>
+      <li>Sensitive information (such as religious or ethnic origin)</li>
+      <li>Contacts from your device</li>
+      <li>Microphone or audio recordings</li>
+      <li>Photos or videos except images you deliberately attach to a product or stock record</li>
+      <li>Advertising data</li>
+      <li>Payment card numbers, CVV, or bank account credentials &mdash; the app has no payment
+        processing functionality and records only a manual payment-method label</li>
+      <li>There is <strong>no in-app purchase</strong>, no subscription, and no digital content
+        purchase in this app</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="s5">
+    <h2 id="s5">5. How we use information</h2>
+    <p>We use the information described above only for the following purposes:</p>
+    <ol>
+      <li><strong>To operate the app</strong> &mdash; creating accounts, signing you in, and
+        managing your sessions.</li>
+      <li><strong>To run the business</strong> &mdash; recording inventory, sales, invoices,
+        expenses, customer and supplier accounts, and balances.</li>
+      <li><strong>To send receipts</strong> &mdash; if staff enter a customer&rsquo;s phone number
+        when creating a sale, the app can send that customer a PDF receipt through
+        <strong>WhatsApp (Meta WhatsApp Business Cloud API)</strong>.</li>
+      <li><strong>To send business alerts</strong> &mdash; low-stock warnings, new-sale alerts,
+        expense alerts and other operational notifications, via push notification and an in-app
+        notification inbox.</li>
+      <li><strong>To send reports</strong> &mdash; daily summary reports (sales, expenses, stock)
+        are emailed to the business owner&rsquo;s designated email address.</li>
+      <li><strong>Security and integrity</strong> &mdash; maintaining an audit trail of who changed
+        what and when, preventing fraud, rate-limiting and blocking abusive requests, and securing
+        the service.</li>
+      <li><strong>Export</strong> &mdash; generating reports and spreadsheet (CSV) exports of sales
+        and audit data.</li>
+    </ol>
+    <p>We do <strong>not</strong> use your data for advertising, and we do <strong>not</strong>
+      sell or rent your personal information to anyone.</p>
+  </section>
+
+  <section aria-labelledby="s6">
+    <h2 id="s6">6. Permissions the app requests</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Permission</th>
+            <th scope="col">Why it is needed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Camera</th>
+            <td>Scan product barcodes, and photograph products and stock items.</td>
+          </tr>
+          <tr>
+            <th scope="row">Photo Library</th>
+            <td>Select existing images of products or stock, and select an image to scan a barcode
+              from.</td>
+          </tr>
+          <tr>
+            <th scope="row">Notifications</th>
+            <td>Deliver business alerts such as low stock, new sales and expense alerts.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The app does not request location, contacts, microphone, or broad file-access
+      permissions.</p>
+  </section>
+
+  <section aria-labelledby="s7">
+    <h2 id="s7">7. How information is shared</h2>
+    <p>We share information only with the following service providers, and only as much as is
+      necessary to provide the app:</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Provider</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">What is shared</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Firebase Cloud Messaging (Google)</th>
+            <td>Push notifications</td>
+            <td>Device push token and delivery metadata</td>
+          </tr>
+          <tr>
+            <th scope="row">MongoDB Atlas (MongoDB Inc.)</th>
+            <td>Database hosting</td>
+            <td>All application data stored in our database</td>
+          </tr>
+          <tr>
+            <th scope="row">Our web server (<code>carpetapi.interacts.uk</code>)</th>
+            <td>App backend / API</td>
+            <td>All app data, over HTTPS (TLS)</td>
+          </tr>
+          <tr>
+            <th scope="row">Meta Platforms (WhatsApp Business Cloud API)</th>
+            <td>Sending sale receipts to customers</td>
+            <td>Customer name, phone number, and the receipt contents</td>
+          </tr>
+          <tr>
+            <th scope="row">Gmail / SMTP mail service</th>
+            <td>Sending daily business report emails</td>
+            <td>Report contents, including sales and stock figures and staff names</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>We do <strong>not</strong> sell, rent, or trade your personal information. We do not share
+      it for cross-app advertising or tracking. We may disclose information if required by law, or
+      as part of a merger or sale of the business, in which case we will notify affected
+      users.</p>
+  </section>
+
+  <section aria-labelledby="s8">
+    <h2 id="s8">8. Data retention</h2>
+    <ul>
+      <li>Account and business records are retained for as long as the account remains active and
+        as long as the business requires the records for accounting and legal purposes.</li>
+      <li>Audit log entries are retained for the period required for security and legal
+        compliance.</li>
+      <li>Push notification tokens are removed from your account when you log out or disable
+        notifications.</li>
+      <li>Deleted records may remain in backups for a limited period before being overwritten.</li>
+      <li>Where required by law (for example tax and accounting rules), records are retained for the
+        mandatory period even after deletion from the app.</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="s9">
+    <h2 id="s9">9. How we protect information</h2>
+    <ul>
+      <li>All data is transmitted over <strong>HTTPS (TLS)</strong>.</li>
+      <li>Passwords are hashed with <strong>bcrypt</strong> and are never stored or transmitted in
+        plaintext.</li>
+      <li>Authentication uses signed, time-limited <strong>JWT</strong> tokens.</li>
+      <li>The server applies rate limiting, security headers, and role-based access control so that
+        each staff member can only access the shops they are assigned to.</li>
+      <li>Passwords, tokens, and database credentials are never exposed to the mobile app.</li>
+    </ul>
+    <p>No system is 100% secure, but we use industry-standard practices to protect your data.</p>
+  </section>
+
+  <section aria-labelledby="s10">
+    <h2 id="s10">10. Your rights and choices</h2>
+    <p>Depending on where you live, you may have rights to access, correct, export, or delete the
+      personal information we hold about you. Staff users can:</p>
+    <ul>
+      <li><strong>View and edit</strong> their own name, email, phone number, and notification
+        preference from the app&rsquo;s Profile / Settings screen.</li>
+      <li><strong>Change their password</strong> from the Settings screen.</li>
+      <li><strong>Delete their own customer, supplier, and sales records</strong> they created,
+        where the business&rsquo;s retention rules allow.</li>
+      <li><strong>Disable notifications</strong> at any time from your device settings or the
+        app&rsquo;s Settings screen.</li>
+      <li><strong>Log out</strong> at any time, which also removes the stored push notification
+        token.</li>
+    </ul>
+    <p>To request access to, correction of, or deletion of your personal information, or to object
+      to a particular use of it, email
+      <a href="mailto:fareedoonshinwari@gmail.com">fareedoonshinwari@gmail.com</a>. We will respond
+      within a reasonable time. If you are a customer or supplier of the business and want your
+      records removed, you can ask the business directly, because the business that entered your
+      details is the party that controls them.</p>
+    <p><strong>Children&rsquo;s privacy.</strong> The app is a business tool and is not directed at
+      children. We do not knowingly collect personal information from anyone under the age of 16. If
+      you believe a child has provided us with personal information, contact us at
+      <a href="mailto:fareedoonshinwari@gmail.com">fareedoonshinwari@gmail.com</a> and we will
+      delete it.</p>
+  </section>
+
+  <section aria-labelledby="s11">
+    <h2 id="s11">11. International transfers</h2>
+    <p>Our server and database providers may process data outside your country of residence. Where
+      data is transferred internationally, we use appropriate safeguards such as standard
+      contractual clauses.</p>
+  </section>
+
+  <section aria-labelledby="s12">
+    <h2 id="s12">12. Changes to this policy</h2>
+    <p>We may update this policy from time to time. When we make a material change, we will update
+      the &ldquo;Last updated&rdquo; date at the top of this page and, where appropriate, notify you
+      inside the app before the change takes effect.</p>
+  </section>
+
+  <section aria-labelledby="s13">
+    <h2 id="s13">13. Contact us</h2>
+    <p>If you have questions, complaints, or requests regarding this policy or our privacy
+      practices:</p>
+    <div class="note">
+      <p><strong>Email:</strong>
+        <a href="mailto:fareedoonshinwari@gmail.com">fareedoonshinwari@gmail.com</a></p>
+    </div>
+  </section>
+
+  <section class="appendix" aria-labelledby="sa">
+    <span class="appendix-label">Appendix A</span>
+    <h2 id="sa">App Store Privacy Nutrition Label (App Store Connect answers)</h2>
+    <p>Use these answers for <strong>App Privacy</strong> in App Store Connect.</p>
+
+    <h3>Data collected (linked to user identity)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Data type</th>
+            <th scope="col">Collected?</th>
+            <th scope="col">Purpose</th>
+            <th scope="col">Tracking?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Contact Info &mdash; Name</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Contact Info &mdash; Email Address</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Contact Info &mdash; Phone Number</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Identifiers &mdash; User ID</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Identifiers &mdash; Device ID (push token)</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">User Content &mdash; Photos or Videos (product photos)</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Purchases &mdash; Purchase History (in-app business sales records
+              only)</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Usage Data &mdash; Product Interaction (in-app audit log)</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+          <tr>
+            <th scope="row">Diagnostics &mdash; Other Diagnostic Data (IP, device platform, app
+              version)</th>
+            <td class="yes">Yes</td><td>App Functionality</td><td class="no">No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Data NOT collected</h3>
+    <p>Leave unselected: Precise Location &middot; Coarse Location &middot; Health &amp; Fitness
+      &middot; Financial Info (card numbers, bank account) &middot; Sensitive Info &middot; Contacts
+      &middot; Browsing History &middot; Search History &middot; User ID advertising &middot;
+      Advertising Data &middot; Other Usage Data &middot; Other Purpose Data.</p>
+
+    <h3>Tracking</h3>
+    <p>Answer <strong>&ldquo;No&rdquo;</strong> &mdash; the app does not track users across apps or
+      websites, does not use IDFA/IDFV, and contains no advertising SDK.</p>
+
+    <h3>Third-party SDKs</h3>
+    <p>Firebase Core and Firebase Cloud Messaging only.</p>
+
+    <h3>Account deletion</h3>
+    <p>App Store Connect may ask whether the app supports account deletion. Note that in this app,
+      <strong>accounts are created by an administrator</strong> &mdash; there is no self-service
+      deletion screen. Answering is still required; explain that deletion is requested from the
+      administrator, or add an admin-initiated delete action if you want to be able to claim
+      &ldquo;yes&rdquo;.</p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p class="footer-brand">Muallim Carpets</p>
+    <p>&copy; 2026 Muallim Carpets</p>
+    <p>Contact:
+      <a href="mailto:fareedoonshinwari@gmail.com">fareedoonshinwari@gmail.com</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

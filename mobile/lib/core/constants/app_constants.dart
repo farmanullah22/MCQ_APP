@@ -7,8 +7,13 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Server base URL.
-  // Production backend.
-  static const String baseUrl = 'https://carpetapi.interacts.uk/api';
+  // Defaults to the production backend. Override for local development with:
+  //   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000/api
+  // (10.0.2.2 is how the Android emulator reaches the host machine.)
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://carpetapi.interacts.uk/api',
+  );
 
   static const String currencySymbol = 'Rs.';
 

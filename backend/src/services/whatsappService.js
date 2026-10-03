@@ -88,24 +88,122 @@ const generateSaleReceiptPDF = async (sale) => {
       });
       doc.moveDown(0.25);
     }
-    doc.moveTo(x0, doc.y).lineTo(x0 + tableW, doc.y).stroke('#DDDDDD');
+doc.moveTo(x0, doc.y).lineTo(x0 + tableW, doc.y).stroke('#DDDDDD');
     doc.moveDown(0.8);
 
-    // Totals
+    // --- Returned goods and replacements ---------------------------------
+    // Only drawn once the invoice has actually been adjusted, so untouched
+    // invoices keep exactly the layout they had before.
+    const hasReturns = Array.isArray(sale.returns) && sale.returns.length > 0;
+    const hasExchanges = Array.isArray(sale.exchanges) && sale.exchanges.length > 0;
+
+    const drawAdjustmentTable = (heading, rows, tint) => {
+      if (rows.length === 0) return;
+      if (doc.y > 700) doc.addPage();
+
+      doc.font('Helvetica-Bold').fontSize(10).fillColor(tint);
+      doc.text(heading, 40, doc.y);
+      doc.moveDown(0.3);
+
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#111111');
+      let hx = x0;
+      headers.forEach((h, i) => {
+        doc.text(h, hx + 4, doc.y, { width: colWidths[i] - 8 });
+        hx += colWidths[i];
+      });
+      doc.moveDown(0.1);
+      doc.moveTo(x0, doc.y).lineTo(x0 + tableW, doc.y).stroke('#CCCCCC');
+      doc.moveDown(0.3);
+
+      doc.font('Helvetica').fontSize(9).fillColor('#333333');
+      for (const row of rows) {
+        if (doc.y > 750) doc.addPage();
+        let cx = x0;
+        row.forEach((cell, i) => {
+          doc.text(cell, cx + 4, doc.y, { width: colWidths[i] - 8 });
+          cx += colWidths[i];
+        });
+        doc.moveDown(0.25);
+      }
+      doc.moveTo(x0, doc.y).lineTo(x0 + tableW, doc.y).stroke('#DDDDDD');
+      doc.moveDown(0.8);
+    };
+
+    if (hasReturns) {
+      drawAdjustmentTable(
+        'Returned Items',
+        sale.returns.map((r) => [
+          r.productName || '-',
+          `${r.quantity}`,
+          currency(r.unitPrice),
+          currency(r.totalAmount),
+        ]),
+        '#B3261E'
+      );
+    }
+
+    if (hasExchanges) {
+      drawAdjustmentTable(
+        'Replacement Items',
+        sale.exchanges.map((e) => [
+          e.productName || '-',
+          `${e.quantity}`,
+          currency(e.unitPrice),
+          currency(e.totalAmount),
+        ]),
+        '#1B6B3A'
+      );
+    }
+
+    // --- Totals -----------------------------------------------------------
+    // `netTotal` replaces the original total once anything came back, so the
+    // customer can see what they actually owe after the adjustment.
+    const hasAdjustedTotal = sale.hasAdjustments === true;
+    const netTotal =
+      typeof sale.netTotal === 'number'
+        ? sale.netTotal
+        : Number(sale.totalAmount || 0) - Number(sale.returnTotal || 0) +
+          Number(sale.exchangeTotal || 0);
+
     const totals = [
-      ['Subtotal', currency(sale.subtotal)],
-      ...(sale.discount > 0 ? [['Discount', `- ${currency(sale.discount)}`]] : []),
-      ['Total', currency(sale.totalAmount)],
-      ['Paid', currency(sale.paidAmount)],
-      ...(sale.dueAmount > 0 ? [['Due', currency(sale.dueAmount)]] : [['Due', currency(0)]]),
-    ];
+      hasAdjustedTotal
+        ? null
+        : ['Subtotal', currency(sale.subtotal)],
+      ...(!hasAdjustedTotal && sale.discount > 0
+        ? [['Discount', `- ${currency(sale.discount)}`]]
+        : []),
+      hasAdjustedTotal ? ['Original Total', currency(sale.totalAmount)] : null,
+      ...(sale.returnTotal > 0 ? [['Returned', `- ${currency(sale.returnTotal)}`]] : []),
+      ...(sale.exchangeTotal > 0 ? [['Exchange Added', `+ ${currency(sale.exchangeTotal)}`]] : []),
+      hasAdjustedTotal ? ['Net Total', currency(netTotal)] : ['Total', currency(sale.totalAmount)],
+      ...(sale.paidAmount > 0 ? [['Paid', currency(sale.paidAmount)]] : []),
+      ...(sale.refundTotal > 0 ? [['Refunded', `- ${currency(sale.refundTotal)}`]] : []),
+      ['Due', currency(sale.dueAmount)],
+    ].filter(Boolean);
+
     doc.font('Helvetica').fontSize(10).fillColor('#333333');
     for (const [label, value] of totals) {
-      doc.font(label === 'Total' ? 'Helvetica-Bold' : 'Helvetica')
-        .fillColor(label === 'Total' ? '#111111' : '#333333');
+      const emphasise = label === 'Total' || label === 'Net Total';
+      doc.font(emphasise ? 'Helvetica-Bold' : 'Helvetica')
+        .fillColor(emphasise ? '#111111' : '#333333');
       doc.text(label, 300, doc.y);
       doc.text(value, 430, doc.y - 11, { width: 165, align: 'right' });
-      if (label === 'Total' || (label === 'Paid')) doc.moveDown(0.2);
+      if (emphasise || label === 'Paid' || label === 'Refunded') doc.moveDown(0.2);
+    }
+
+    if (sale.notes) {
+      doc.moveDown(0.6);
+      doc.font('Helvetica').fontSize(9).fillColor('#666666').text(`Notes: ${sale.notes}`);
+    }
+
+    if (hasAdjustedTotal) {
+      doc.moveDown(0.4);
+      doc.font('Helvetica-Oblique').fontSize(8).fillColor('#888888').text(
+        'This invoice has been amended with returns/exchanges. Figures above reflect the latest revision.',
+        40,
+        doc.y,
+        { width: tableW }
+      );
     }
 
     if (sale.notes) {

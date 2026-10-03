@@ -108,6 +108,105 @@ class SaleMutationController extends Notifier<SaleMutationState> {
     }
   }
 
+  // Every adjustment moves stock and money, so all of them refresh the same
+  // set of caches as a fresh sale does.
+  void _afterAdjustment(Sale sale) {
+    state = SaleMutationState(sale: sale);
+    ref.invalidate(saleListControllerProvider);
+    ref.invalidate(inventoryHistoryControllerProvider);
+    ref.invalidate(productListControllerProvider);
+    ref.invalidate(dashboardControllerProvider);
+  }
+
+  Future<Sale?> addItems(
+    String id,
+    List<Map<String, dynamic>> items, {
+    String notes = '',
+  }) async {
+    state = const SaleMutationState(loading: true);
+    try {
+      final sale =
+          await ref.read(saleRepositoryProvider).addItems(id, items, notes: notes);
+      _afterAdjustment(sale);
+      return sale;
+    } catch (e) {
+      state = SaleMutationState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<Sale?> returnItems(
+    String id, {
+    required List<Map<String, dynamic>> items,
+    String reason = '',
+    Map<String, dynamic>? settlement,
+  }) async {
+    state = const SaleMutationState(loading: true);
+    try {
+      final sale = await ref.read(saleRepositoryProvider).returnItems(
+            id,
+            items: items,
+            reason: reason,
+            settlement: settlement,
+          );
+      _afterAdjustment(sale);
+      return sale;
+    } catch (e) {
+      state = SaleMutationState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<Sale?> exchangeItems(
+    String id, {
+    required List<Map<String, dynamic>> incoming,
+    required List<Map<String, dynamic>> outgoing,
+    String reason = '',
+    String note = '',
+    Map<String, dynamic>? settlement,
+  }) async {
+    state = const SaleMutationState(loading: true);
+    try {
+      final sale = await ref.read(saleRepositoryProvider).exchangeItems(
+            id,
+            incoming: incoming,
+            outgoing: outgoing,
+            note: note,
+            reason: reason,
+            settlement: settlement,
+          );
+      _afterAdjustment(sale);
+      return sale;
+    } catch (e) {
+      state = SaleMutationState(error: e.toString());
+      return null;
+    }
+  }
+
+  Future<Sale?> recordPayment(
+    String id, {
+    required String type,
+    required double amount,
+    String method = '',
+    String note = '',
+  }) async {
+    state = const SaleMutationState(loading: true);
+    try {
+      final sale = await ref.read(saleRepositoryProvider).recordPayment(
+            id,
+            type: type,
+            amount: amount,
+            method: method,
+            note: note,
+          );
+      _afterAdjustment(sale);
+      return sale;
+    } catch (e) {
+      state = SaleMutationState(error: e.toString());
+      return null;
+    }
+  }
+
   void reset() => state = const SaleMutationState();
 }
 
